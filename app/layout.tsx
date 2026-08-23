@@ -17,11 +17,23 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: 'Tally',
   description: 'Time audit and goal alignment.',
+  // iOS ignores the manifest's display mode; this is what makes an
+  // added-to-home-screen launch open without Safari chrome.
+  appleWebApp: {
+    capable: true,
+    title: 'Tally',
+    statusBarStyle: 'default',
+  },
+  icons: {
+    apple: '/icons/icon-180.png',
+  },
 }
 
 export const viewport: Viewport = {
   themeColor: '#f2f2ef',
   viewportFit: 'cover',
+  // The capture grid is a fixed keypad; pinch-zooming it only ever misfires.
+  maximumScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
