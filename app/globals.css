@@ -39,3 +39,9 @@ body {
 .tnum {
   font-feature-settings: 'tnum' 1;
 }
+
+/* Unlogged stretches on the reconcile strip. Hatching, not a flat fill, so a
+   gap never reads as just another category. */
+.gap-hatch {
+  background-image: repeating-linear-gradient(135deg, #f5cfce 0 4px, #fbeceb 4px 8px);
+}
