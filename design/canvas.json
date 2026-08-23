@@ -1,0 +1,57 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Phone — capture" },
+    { "id": "page-2", "name": "Desktop — reports" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html",        "title": "Capture",                    "page": "page-1", "x": 0,    "y": 0,    "w": 390,  "h": 844 },
+    { "file": "LongBlock.dc.html",   "title": "Capture · 90-minute prompt", "page": "page-1", "x": 470,  "y": 0,    "w": 390,  "h": 844 },
+    { "file": "Reconcile.dc.html",   "title": "Reconcile",                  "page": "page-1", "x": 940,  "y": 0,    "w": 390,  "h": 844 },
+    { "file": "DailyCheck.dc.html",  "title": "Daily check",                "page": "page-1", "x": 1410, "y": 0,    "w": 390,  "h": 844 },
+
+    { "file": "WeekSummary.dc.html",  "title": "Week summary",              "page": "page-2", "x": 0,    "y": 0,    "w": 1440, "h": 900 },
+    { "file": "MonthSummary.dc.html", "title": "Month summary",             "page": "page-2", "x": 1560, "y": 0,    "w": 1440, "h": 900 },
+    { "file": "Goals.dc.html",        "title": "Goals & priorities",        "page": "page-2", "x": 3120, "y": 0,    "w": 1440, "h": 900 },
+
+    { "file": "Allocation.dc.html",  "title": "Allocation vs. intention",   "page": "page-2", "x": 0,    "y": 1060, "w": 1440, "h": 900 },
+    { "file": "Drip.dc.html",        "title": "DRIP quadrant",              "page": "page-2", "x": 1560, "y": 1060, "w": 1440, "h": 900 },
+    { "file": "RunChart.dc.html",    "title": "Run chart",                  "page": "page-2", "x": 3120, "y": 1060, "w": 1440, "h": 900 },
+
+    { "file": "WeeklyReview.dc.html","title": "Weekly review",              "page": "page-2", "x": 0,    "y": 2120, "w": 1440, "h": 900 }
+  ],
+  "annotations": [
+    {
+      "id": "phone-flow",
+      "page": "page-1",
+      "x": 0,
+      "y": -150,
+      "w": 820,
+      "text": "Write-only. No totals, no history, nothing to scroll.\nCapture is the only screen you touch during the day — tap a tile, the open block closes and a new one opens.\nThe 90-minute prompt is the single interruption the app is allowed to make."
+    },
+    {
+      "id": "phone-end",
+      "page": "page-1",
+      "x": 940,
+      "y": -150,
+      "w": 860,
+      "text": "End of day, once. Reconcile the strip, answer two questions, and the day is closed.\nThe last screen deliberately offers nothing further."
+    },
+    {
+      "id": "desk-summary",
+      "page": "page-2",
+      "x": 0,
+      "y": -190,
+      "w": 1400,
+      "text": "SUMMARY — the two screens you actually open. Week is the reconcile strip repeated seven times; Month is where a change becomes visible, because week-to-week is signal and day-to-day is noise.\nGoals & priorities is set-up, not reporting: rank by hand, map categories to goals, and the hours fall out of the mapping."
+    },
+    {
+      "id": "desk-analysis",
+      "page": "page-2",
+      "x": 0,
+      "y": 1000,
+      "w": 1400,
+      "text": "ANALYSIS + REVIEW — hold these until the end of baseline week 4. Sample figures throughout: week 6 of a run, two changes already made, 112.4h of waking time logged against 6.6h unlogged and 49h of sleep outside the strip."
+    }
+  ],
+  "launch": { "view": "canvas", "page": "page-2" }
+}

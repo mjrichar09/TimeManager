@@ -1,0 +1,237 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #f2f2ef; -webkit-font-smoothing: antialiased; }
+    a { color: #2a78d6; text-decoration: none; } a:hover { color: #1c5cab; }
+    .t { font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+    .m { font-family: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace; font-feature-settings: 'tnum' 1; }
+    .nav { display: block; padding: 9px 12px; font-size: 13px; color: #5a5954; border-left: 2px solid transparent; cursor: pointer; }
+    .nav:hover { color: #141414; background: #eceae5; }
+    .nav.on { color: #141414; border-left-color: #141414; background: #eceae5; font-weight: 500; }
+    .navhead { display: block; padding: 15px 12px 5px; font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 9px; letter-spacing: 0.14em; color: #b0afa7; }
+    .card { background: #fcfcfb; border: 1px solid #d9d8d2; }
+    .row { cursor: default; }
+  </style>
+</helmet>
+
+<div class="t" style="width: 1440px; height: 900px; background: #f2f2ef; color: #141414; display: flex; overflow: hidden;">
+
+  <div style="width: 232px; flex-shrink: 0; border-right: 1px solid #d9d8d2; background: #fcfcfb; display: flex; flex-direction: column; padding: 28px 0;">
+    <div style="padding: 0 20px;">
+      <div style="font-size: 19px; font-weight: 600; letter-spacing: -0.01em;">Tally</div>
+      <div class="m" style="font-size: 9px; letter-spacing: 0.14em; color: #8d8c85; margin-top: 5px;">BASELINE · WEEK 6</div>
+    </div>
+    <div style="margin: 24px 20px 0; padding: 10px 12px; border: 1px solid #e6e5df; display: flex; align-items: center; justify-content: space-between;">
+      <span class="m" style="font-size: 11px; color: #8d8c85; cursor: pointer;">&#8249;</span>
+      <span class="m" style="font-size: 11px; letter-spacing: 0.04em;">18 – 24 AUG</span>
+      <span class="m" style="font-size: 11px; color: #8d8c85; cursor: pointer;">&#8250;</span>
+    </div>
+    <div style="margin-top: 22px; display: flex; flex-direction: column; gap: 1px;">
+      <span class="navhead">SUMMARY</span>
+      <span class="nav">Week</span>
+      <span class="nav">Month</span>
+      <span class="navhead">ANALYSIS</span>
+      <span class="nav on">Allocation vs. intention</span>
+      <span class="nav">DRIP quadrant</span>
+      <span class="nav">Run chart</span>
+      <span class="navhead">REVIEW</span>
+      <span class="nav">Weekly review</span>
+      <span class="navhead">SET UP</span>
+      <span class="nav">Goals &amp; priorities</span>
+    </div>
+    <div style="margin-top: auto; padding: 0 20px;">
+      <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #a9a8a0; line-height: 1.8;">CAPTURE LIVES<br>ON THE PHONE</div>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; padding: 34px 40px 32px; display: flex; flex-direction: column; gap: 22px; overflow: hidden;">
+
+    <div>
+      <div class="m" style="font-size: 10px; letter-spacing: 0.14em; color: #8d8c85;">ALLOCATION VS. INTENTION</div>
+      <div style="display: flex; align-items: baseline; gap: 16px; margin-top: 7px;">
+        <div style="font-size: 27px; font-weight: 600; letter-spacing: -0.02em;">Where the week actually went</div>
+        <div style="font-size: 13px; color: #8d8c85;">Declared priority order on the left, hours order on the right.</div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 22px; align-items: stretch;">
+
+      <div class="card" style="flex-grow: 1; flex-basis: 0; padding: 24px 26px;">
+        <div style="display: flex; justify-content: space-between;">
+          <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #8d8c85;">DECLARED</div>
+          <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #8d8c85;">BY HOURS LOGGED</div>
+        </div>
+
+        <div style="display: flex; gap: 0; margin-top: 14px;">
+          <div style="flex-grow: 1; flex-basis: 0; display: flex; flex-direction: column; gap: 12px;">
+            <sc-for list="{{left}}" as="g" hint-placeholder-count="5">
+              <div onMouseEnter="{{g.hover}}" onMouseLeave="{{unhover}}" style="height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 12px; background: {{g.bg}}; border: 1px solid {{g.border}};">
+                <span class="m" style="font-size: 15px; color: {{g.rankColor}};">{{g.rank}}</span>
+                <span style="font-size: 14px; line-height: 1.25; color: {{g.fg}}; text-wrap: pretty;">{{g.title}}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="width: 132px; flex-shrink: 0;">
+            <svg viewBox="0 0 132 340" width="132" height="340" style="display: block; overflow: visible;">
+              <sc-for list="{{links}}" as="l" hint-placeholder-count="5">
+                <path d="{{l.d}}" fill="none" stroke="{{l.stroke}}" stroke-width="{{l.width}}" stroke-linecap="round"></path>
+              </sc-for>
+            </svg>
+          </div>
+
+          <div style="flex-grow: 1; flex-basis: 0; display: flex; flex-direction: column; gap: 12px;">
+            <sc-for list="{{right}}" as="g" hint-placeholder-count="5">
+              <div onMouseEnter="{{g.hover}}" onMouseLeave="{{unhover}}" style="height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 12px; background: {{g.bg}}; border: 1px solid {{g.border}};">
+                <span style="font-size: 14px; line-height: 1.25; color: {{g.fg}}; flex-grow: 1; text-wrap: pretty;">{{g.title}}</span>
+                <span class="m" style="font-size: 15px; font-weight: 500; color: {{g.fg}};">{{g.hours}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 20px; margin-top: 20px; padding-top: 14px; border-top: 1px solid #e6e5df;">
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <span style="width: 16px; height: 2px; background: #e34948; display: block;"></span>
+            <span class="m" style="font-size: 10px; letter-spacing: 0.08em; color: #5a5954;">FELL BELOW ITS RANK</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <span style="width: 16px; height: 2px; background: #2a78d6; display: block;"></span>
+            <span class="m" style="font-size: 10px; letter-spacing: 0.08em; color: #5a5954;">ROSE ABOVE IT</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <span style="width: 16px; height: 2px; background: #b9b8b0; display: block;"></span>
+            <span class="m" style="font-size: 10px; letter-spacing: 0.08em; color: #5a5954;">HELD</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="width: 356px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px;">
+        <div class="card" style="padding: 22px 24px; border-left: 1px solid #d9d8d2;">
+          <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #c0392b;">WIDEST GAP</div>
+          <div style="font-size: 19px; font-weight: 600; letter-spacing: -0.01em; margin-top: 9px; line-height: 1.3;">Rank 2 came fourth.</div>
+          <div style="font-size: 13px; color: #5a5954; line-height: 1.6; margin-top: 8px; text-wrap: pretty;">
+            <em style="font-style: normal; color: #141414;">Get back to 3 lifts a week</em> took 2.6h — less than Media / scroll took (9.8h).
+          </div>
+        </div>
+
+        <div class="card" style="padding: 22px 24px;">
+          <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #8d8c85;">ATTACHED TO NO GOAL</div>
+          <div style="display: flex; align-items: baseline; gap: 10px; margin-top: 9px;">
+            <span class="m" style="font-size: 34px; font-weight: 500; letter-spacing: -0.03em;">65.9h</span>
+            <span class="m" style="font-size: 14px; color: #8d8c85;">59%</span>
+          </div>
+          <div style="height: 8px; background: #eceae5; margin-top: 12px; display: flex;">
+            <div style="width: 59%; background: #b9b8b0;"></div>
+          </div>
+          <div style="font-size: 13px; color: #5a5954; line-height: 1.6; margin-top: 10px; text-wrap: pretty;">
+            Meetings, meals, email, commute, media. Expected — but this is the pool anything you cut comes out of.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card" style="flex-grow: 1; padding: 22px 26px; display: flex; flex-direction: column;">
+      <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #8d8c85;">HOURS PER GOAL · WEEK OF 18 AUG</div>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 14px;">
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="5">
+          <div onMouseEnter="{{b.hover}}" onMouseLeave="{{unhover}}" style="display: flex; align-items: center; gap: 14px;">
+            <span style="width: 214px; flex-shrink: 0; font-size: 13px; color: {{b.fg}}; text-align: right;">{{b.title}}</span>
+            <span style="flex-grow: 1; height: 18px; background: #f2f2ef; display: flex;">
+              <span style="width: {{b.pct}}%; background: {{b.fill}}; border-radius: 0 4px 4px 0; display: block;"></span>
+            </span>
+            <span class="m" style="width: 58px; flex-shrink: 0; font-size: 13px; font-weight: 500; color: {{b.fg}};">{{b.hours}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.goals = [
+      { id: 'consult', title: 'Ship the consulting practice', rank: 1, hours: 18.6 },
+      { id: 'lifts',   title: 'Get back to 3 lifts a week',   rank: 2, hours: 2.6 },
+      { id: 'kids',    title: 'Be present for the kids',      rank: 3, hours: 15.2 },
+      { id: 'house',   title: 'Finish the house renovation',  rank: 4, hours: 8.2 },
+      { id: 'book',    title: 'Write the book',               rank: 5, hours: 1.9 }
+    ];
+    this.state = { hover: null };
+  }
+
+  renderVals() {
+    const self = this;
+    const hover = this.state.hover;
+    const byRank = this.goals.slice().sort(function (a, b) { return a.rank - b.rank; });
+    const byHours = this.goals.slice().sort(function (a, b) { return b.hours - a.hours; });
+    const max = byHours[0].hours;
+    const y = function (i) { return i * 68 + 28; };
+
+    const shell = function (g) {
+      const on = hover === g.id;
+      return {
+        bg: on ? '#eceae5' : 'transparent',
+        border: on ? '#cbcac2' : '#e6e5df',
+        fg: on || hover === null ? '#141414' : '#8d8c85',
+        hover: function () { self.setState({ hover: g.id }); }
+      };
+    };
+
+    return {
+      left: byRank.map(function (g) {
+        const s = shell(g);
+        return {
+          rank: String(g.rank), title: g.title,
+          rankColor: hover === g.id ? '#141414' : '#a9a8a0',
+          bg: s.bg, border: s.border, fg: s.fg, hover: s.hover
+        };
+      }),
+      right: byHours.map(function (g) {
+        const s = shell(g);
+        return {
+          title: g.title, hours: g.hours.toFixed(1) + 'h',
+          bg: s.bg, border: s.border, fg: s.fg, hover: s.hover
+        };
+      }),
+      links: byRank.map(function (g) {
+        const from = y(g.rank - 1);
+        const to = y(byHours.indexOf(g));
+        const drop = to - from;
+        const on = hover === g.id;
+        return {
+          d: 'M 0 ' + from + ' C 52 ' + from + ', 80 ' + to + ', 132 ' + to,
+          stroke: drop > 0 ? '#e34948' : drop < 0 ? '#2a78d6' : '#b9b8b0',
+          width: on ? '4' : hover === null ? '2' : '1.25'
+        };
+      }),
+      bars: byHours.map(function (g) {
+        const s = shell(g);
+        return {
+          title: g.title,
+          hours: g.hours.toFixed(1) + 'h',
+          pct: String(Math.max(0.4, (g.hours / max) * 100)),
+          fill: hover === g.id ? '#1c5cab' : hover === null ? '#2a78d6' : '#9ec5f4',
+          fg: s.fg, hover: s.hover
+        };
+      }),
+      unhover: function () { self.setState({ hover: null }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

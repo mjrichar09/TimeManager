@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #f2f2ef; -webkit-font-smoothing: antialiased; }
+    a { color: #2a78d6; text-decoration: none; } a:hover { color: #1c5cab; }
+    .t { font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+    .m { font-family: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace; font-feature-settings: 'tnum' 1; }
+    .tile { appearance: none; border: 1px solid #dcdbd4; background: #fcfcfb; text-align: left;
+            padding: 12px 12px 10px; cursor: pointer; transition: background 90ms linear, border-color 90ms linear;
+            display: flex; flex-direction: column; justify-content: space-between; }
+    .tile:hover { border-color: #b9b8b0; }
+    .tile:active { background: #eceae4; }
+    @keyframes livedot { 0%, 60% { opacity: 1; } 80%, 100% { opacity: 0.15; } }
+    .live { animation: livedot 2s ease-in-out infinite; }
+    @keyframes riseup { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .flash { animation: riseup 140ms ease-out; }
+  </style>
+</helmet>
+
+<div class="t" style="width: 390px; height: 844px; position: relative; background: #f2f2ef; color: #141414; display: flex; flex-direction: column; overflow: hidden;">
+
+  <div style="padding: 22px 16px 14px; border-bottom: 1px solid #d9d8d2; background: #f2f2ef;">
+    <div style="display: flex; align-items: center; gap: 7px;">
+      <span class="live" style="width: 7px; height: 7px; border-radius: 50%; background: #e34948; display: block;"></span>
+      <span class="m" style="font-size: 10px; letter-spacing: 0.14em; color: #8d8c85;">OPEN SINCE {{open.since}}</span>
+    </div>
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 9px;">
+      <div style="font-size: 27px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.1;">{{open.name}}</div>
+      <div class="m" style="font-size: 27px; font-weight: 500; color: #141414; letter-spacing: -0.03em;">{{open.elapsed}}</div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; padding: 14px 16px 0;">
+    <sc-for list="{{tiles}}" as="t" hint-placeholder-count="14">
+      <button class="tile" onClick="{{t.pick}}" style="height: 112px; border-radius: 0; background: {{t.bg}}; border-color: {{t.border}};">
+        <span class="m" style="font-size: 9px; letter-spacing: 0.12em; color: {{t.tag}};">{{t.tagText}}</span>
+        <span style="font-size: 15px; font-weight: 500; line-height: 1.2; letter-spacing: -0.01em; color: {{t.fg}}; text-wrap: pretty;">{{t.name}}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="margin-top: auto; padding: 16px; border-top: 1px solid #d9d8d2;">
+    <button style="appearance: none; width: 100%; background: none; border: 1px solid #cbcac2; color: #5a5954; padding: 14px; font: inherit; font-size: 13px; letter-spacing: 0.01em; cursor: pointer;">End the day</button>
+  </div>
+
+  <sc-if value="{{flash.on}}" hint-placeholder-val="{{ true }}">
+    <div class="flash m" style="position: absolute; left: 16px; right: 16px; top: 108px; background: #141414; color: #fcfcfb; padding: 13px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; letter-spacing: 0.01em;">
+      <span>{{flash.closed}}</span>
+      <span style="color: #8d8c85;">CLOSED</span>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.cats = [
+      { id: 'deep',    name: 'Deep work',       quick: true },
+      { id: 'meet',    name: 'Meetings',        quick: true },
+      { id: 'email',   name: 'Email / admin',   quick: true },
+      { id: 'kidsa',   name: 'Kids \u2014 active', quick: true },
+      { id: 'chores',  name: 'Household chores', quick: true },
+      { id: 'media',   name: 'Media / scroll',  quick: true },
+      { id: 'commute', name: 'Commute',         quick: false },
+      { id: 'kidsl',   name: 'Kids \u2014 logistics', quick: false },
+      { id: 'exer',    name: 'Exercise',        quick: false },
+      { id: 'meals',   name: 'Meals',           quick: false },
+      { id: 'errands', name: 'Errands',         quick: false },
+      { id: 'proj',    name: 'Personal projects', quick: false },
+      { id: 'social',  name: 'Social / family', quick: false },
+      { id: 'sleep',   name: 'Sleep',           quick: false }
+    ];
+    this.state = { openId: 'deep', since: '09:12', elapsed: 47 * 60, flash: null };
+  }
+
+  componentDidMount() {
+    this.timer = setInterval(() => this.setState({ elapsed: this.state.elapsed + 1 }), 1000);
+  }
+  componentWillUnmount() {
+    clearInterval(this.timer);
+    clearTimeout(this.flashTimer);
+  }
+
+  clockNow() {
+    const base = 9 * 60 + 12 + Math.floor(this.state.elapsed / 60);
+    const h = Math.floor(base / 60) % 24, m = base % 60;
+    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+  }
+
+  switchTo(cat) {
+    if (cat.id === this.state.openId) return;
+    const prev = this.cats.find((c) => c.id === this.state.openId);
+    const mins = Math.max(1, Math.floor(this.state.elapsed / 60));
+    clearTimeout(this.flashTimer);
+    this.setState({
+      openId: cat.id,
+      since: this.clockNow(),
+      elapsed: 0,
+      flash: prev.name + ' \u00b7 ' + mins + 'm'
+    });
+    this.flashTimer = setTimeout(() => this.setState({ flash: null }), 1800);
+  }
+
+  renderVals() {
+    const openId = this.state.openId;
+    const open = this.cats.find((c) => c.id === openId);
+    const mins = Math.floor(this.state.elapsed / 60);
+    const h = Math.floor(mins / 60), m = mins % 60;
+
+    return {
+      open: {
+        name: open.name,
+        since: this.state.since,
+        elapsed: h > 0 ? h + 'h ' + String(m).padStart(2, '0') + 'm' : m + 'm'
+      },
+      flash: { on: !!this.state.flash, closed: this.state.flash || '' },
+      tiles: this.cats.map((c) => {
+        const isOpen = c.id === openId;
+        return {
+          name: c.name,
+          tagText: isOpen ? 'OPEN' : (c.quick ? 'QUICK' : ''),
+          bg: isOpen ? '#141414' : (c.quick ? '#fcfcfb' : '#eceae5'),
+          border: isOpen ? '#141414' : '#dcdbd4',
+          fg: isOpen ? '#fcfcfb' : (c.quick ? '#141414' : '#5a5954'),
+          tag: isOpen ? '#e34948' : '#a9a8a0',
+          pick: () => this.switchTo(c)
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

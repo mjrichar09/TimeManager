@@ -1,0 +1,300 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #f2f2ef; -webkit-font-smoothing: antialiased; }
+    a { color: #2a78d6; text-decoration: none; } a:hover { color: #1c5cab; }
+    .t { font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+    .m { font-family: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace; font-feature-settings: 'tnum' 1; }
+    .nav { display: block; padding: 9px 12px; font-size: 13px; color: #5a5954; border-left: 2px solid transparent; cursor: pointer; }
+    .nav:hover { color: #141414; background: #eceae5; }
+    .nav.on { color: #141414; border-left-color: #141414; background: #eceae5; font-weight: 500; }
+    .navhead { display: block; padding: 15px 12px 5px; font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 9px; letter-spacing: 0.14em; color: #b0afa7; }
+    .card { background: #fcfcfb; border: 1px solid #d9d8d2; }
+    .move { appearance: none; width: 26px; height: 22px; border: 1px solid #dcdbd4; background: #fcfcfb;
+            font: inherit; font-size: 11px; color: #5a5954; cursor: pointer; line-height: 1; padding: 0; }
+    .move:hover { border-color: #8d8c85; color: #141414; }
+    .move[disabled] { color: #d9d8d2; cursor: default; border-color: #eceae5; }
+    .catrow { cursor: pointer; }
+    .catrow:hover { background: #f7f6f2; }
+    .chip { appearance: none; font: inherit; font-size: 12px; padding: 9px 11px; cursor: pointer;
+            border: 1px solid #dcdbd4; background: #fcfcfb; color: #141414; text-align: left; }
+    .chip:hover { border-color: #b9b8b0; }
+    .tag { font-size: 11px; padding: 3px 7px; border: 1px solid #e6e5df; color: #5a5954; background: #f7f6f2; }
+  </style>
+</helmet>
+
+<div class="t" style="width: 1440px; height: 900px; background: #f2f2ef; color: #141414; display: flex; overflow: hidden;">
+
+  <div style="width: 232px; flex-shrink: 0; border-right: 1px solid #d9d8d2; background: #fcfcfb; display: flex; flex-direction: column; padding: 28px 0;">
+    <div style="padding: 0 20px;">
+      <div style="font-size: 19px; font-weight: 600; letter-spacing: -0.01em;">Tally</div>
+      <div class="m" style="font-size: 9px; letter-spacing: 0.14em; color: #8d8c85; margin-top: 5px;">BASELINE · WEEK 6</div>
+    </div>
+    <div style="margin: 24px 20px 0; padding: 10px 12px; border: 1px solid #e6e5df; display: flex; align-items: center; justify-content: space-between;">
+      <span class="m" style="font-size: 11px; color: #8d8c85; cursor: pointer;">&#8249;</span>
+      <span class="m" style="font-size: 11px; letter-spacing: 0.04em;">18 – 24 AUG</span>
+      <span class="m" style="font-size: 11px; color: #8d8c85; cursor: pointer;">&#8250;</span>
+    </div>
+    <div style="margin-top: 22px; display: flex; flex-direction: column; gap: 1px;">
+      <span class="navhead">SUMMARY</span>
+      <span class="nav">Week</span>
+      <span class="nav">Month</span>
+      <span class="navhead">ANALYSIS</span>
+      <span class="nav">Allocation vs. intention</span>
+      <span class="nav">DRIP quadrant</span>
+      <span class="nav">Run chart</span>
+      <span class="navhead">REVIEW</span>
+      <span class="nav">Weekly review</span>
+      <span class="navhead">SET UP</span>
+      <span class="nav on">Goals &amp; priorities</span>
+    </div>
+    <div style="margin-top: auto; padding: 0 20px;">
+      <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #a9a8a0; line-height: 1.8;">CAPTURE LIVES<br>ON THE PHONE</div>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; padding: 34px 40px 32px; display: flex; flex-direction: column; gap: 20px; overflow: hidden;">
+
+    <div>
+      <div class="m" style="font-size: 10px; letter-spacing: 0.14em; color: #8d8c85;">GOALS &amp; PRIORITIES</div>
+      <div style="display: flex; align-items: baseline; gap: 16px; margin-top: 7px;">
+        <div style="font-size: 27px; font-weight: 600; letter-spacing: -0.02em;">Five goals, ranked by hand</div>
+        <div style="font-size: 13px; color: #8d8c85;">The rank is a declaration. The hours are the measurement. Keeping them apart is the point.</div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 20px; flex-grow: 1; min-height: 0;">
+
+      <div style="flex-grow: 1; flex-basis: 0; display: flex; flex-direction: column; gap: 12px;">
+        <div class="card" style="padding: 20px 24px; flex-grow: 1; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #8d8c85;">ACTIVE · HORIZON “CURRENT”</div>
+            <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #a9a8a0;">LAST 4 WEEKS &nbsp;&nbsp; THIS WEEK</div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 14px;">
+            <sc-for list="{{goals}}" as="g" hint-placeholder-count="5">
+              <div style="display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid #e6e5df; background: {{g.bg}};">
+                <div style="display: flex; flex-direction: column; gap: 3px; flex-shrink: 0;">
+                  <button class="move" onClick="{{g.up}}" disabled="{{g.upOff}}">&#9650;</button>
+                  <button class="move" onClick="{{g.down}}" disabled="{{g.downOff}}">&#9660;</button>
+                </div>
+                <span class="m" style="font-size: 20px; font-weight: 500; color: #a9a8a0; width: 18px; flex-shrink: 0;">{{g.rank}}</span>
+                <div style="flex-grow: 1; min-width: 0;">
+                  <div style="font-size: 16px; font-weight: 500; letter-spacing: -0.01em;">{{g.title}}</div>
+                  <div style="display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap;">
+                    <sc-for list="{{g.chips}}" as="c" hint-placeholder-count="2">
+                      <span class="tag">{{c.name}}</span>
+                    </sc-for>
+                  </div>
+                </div>
+                <svg viewBox="0 0 120 34" width="120" height="34" style="flex-shrink: 0; display: block; overflow: visible;">
+                  <line x1="0" y1="33" x2="120" y2="33" stroke="#efeee9" stroke-width="1"></line>
+                  <path d="{{g.spark}}" fill="none" stroke="{{g.sparkFg}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                <span class="m" style="width: 62px; flex-shrink: 0; text-align: right; font-size: 19px; font-weight: 500; letter-spacing: -0.02em; color: {{g.hoursFg}};">{{g.hours}}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="margin-top: 14px; padding: 14px 16px; border: 1px dashed #d9d8d2; display: flex; align-items: center; gap: 12px;">
+            <span class="m" style="font-size: 18px; color: #cbcac2;">+</span>
+            <span style="font-size: 14px; color: #8d8c85;">Add a goal</span>
+            <span class="m" style="margin-left: auto; font-size: 10px; letter-spacing: 0.1em; color: #c0392b;">5 OF 5 USED — ARCHIVE ONE FIRST</span>
+          </div>
+
+          <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid #e6e5df;">
+            <div style="font-size: 13px; color: #8d8c85; line-height: 1.6; text-wrap: pretty; max-width: 620px;">
+              Quarter, year and five-year horizons already exist in the data, and a goal can hang off a parent.
+              Neither is on screen until there are four weeks of energy data to hang the longer horizons on.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="width: 452px; flex-shrink: 0; padding: 20px 22px; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #8d8c85;">CATEGORY → DEFAULT GOAL</div>
+          <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #a9a8a0;">{{mapped}} OF 14</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; margin-top: 12px;">
+          <sc-for list="{{cats}}" as="c" hint-placeholder-count="14">
+            <div class="catrow" onClick="{{c.pick}}" style="display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-bottom: 1px solid #f4f3ef; background: {{c.bg}};">
+              <span style="width: 20px; flex-shrink: 0; height: 10px; background: {{c.swatch}}; display: block;"></span>
+              <span style="flex-grow: 1; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{c.name}}</span>
+              <span class="m" style="width: 44px; flex-shrink: 0; text-align: right; font-size: 12px; color: #8d8c85;">{{c.hours}}</span>
+              <span style="width: 148px; flex-shrink: 0; text-align: right; font-size: 12px; color: {{c.goalFg}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{c.goal}}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #e6e5df;">
+          <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #8d8c85;">{{picker.label}}</div>
+          <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 9px;">
+            <sc-for list="{{picker.options}}" as="o" hint-placeholder-count="6">
+              <button class="chip" onClick="{{o.pick}}" style="background: {{o.bg}}; color: {{o.fg}}; border-color: {{o.border}};">{{o.name}}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="margin-top: auto; padding-top: 14px;">
+          <div style="font-size: 12px; color: #8d8c85; line-height: 1.6; text-wrap: pretty;">
+            A block inherits its goal from the category at the moment it opens. Changing a default here does not rewrite blocks already logged.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+
+    // Weekly hours, weeks 3–6. Goal totals are derived from whichever categories map to them.
+    this.cats = [
+      { id: 'deep',    name: 'Deep work',        e: 1,  wk: [16.8, 17.2, 17.9, 18.6] },
+      { id: 'kidsa',   name: 'Kids — active',    e: 1,  wk: [14.1, 14.5, 14.8, 15.2] },
+      { id: 'meet',    name: 'Meetings',         e: -1, wk: [14.6, 14.4, 14.2, 11.4] },
+      { id: 'meals',   name: 'Meals',            e: 0,  wk: [11.0, 11.2, 11.1, 11.4] },
+      { id: 'email',   name: 'Email / admin',    e: -1, wk: [9.2, 9.4, 9.6, 10.2] },
+      { id: 'media',   name: 'Media / scroll',   e: -1, wk: [7.6, 8.0, 8.4, 9.8] },
+      { id: 'chores',  name: 'Household chores', e: -1, wk: [10.2, 10.4, 10.6, 8.2] },
+      { id: 'commute', name: 'Commute',          e: -1, wk: [7.4, 7.5, 7.6, 7.8] },
+      { id: 'social',  name: 'Social / family',  e: 1,  wk: [5.0, 5.2, 5.4, 6.2] },
+      { id: 'kidsl',   name: 'Kids — logistics', e: -1, wk: [5.2, 5.4, 5.3, 5.1] },
+      { id: 'errands', name: 'Errands',          e: -1, wk: [4.2, 4.3, 4.4, 4.0] },
+      { id: 'exer',    name: 'Exercise',         e: 1,  wk: [2.2, 2.3, 2.4, 2.6] },
+      { id: 'proj',    name: 'Personal projects', e: 1, wk: [1.2, 1.4, 1.5, 1.9] },
+      { id: 'sleep',   name: 'Sleep',            e: 0,  wk: [49.4, 49.1, 48.8, 49.0] }
+    ];
+
+    this.goalMeta = {
+      consult: 'Ship the consulting practice',
+      lifts:   'Get back to 3 lifts a week',
+      kids:    'Be present for the kids',
+      house:   'Finish the house renovation',
+      book:    'Write the book'
+    };
+
+    this.state = {
+      order: ['consult', 'lifts', 'kids', 'house', 'book'],
+      map: {
+        deep: 'consult', exer: 'lifts', kidsa: 'kids', chores: 'house', proj: 'book',
+        meet: null, meals: null, email: null, media: null, commute: null,
+        social: null, kidsl: null, errands: null, sleep: null
+      },
+      sel: 'meet'
+    };
+  }
+
+  move(id, delta) {
+    const order = this.state.order.slice();
+    const i = order.indexOf(id);
+    const j = i + delta;
+    if (j < 0 || j >= order.length) return;
+    order[i] = order[j];
+    order[j] = id;
+    this.setState({ order: order });
+  }
+
+  assign(goalId) {
+    const map = Object.assign({}, this.state.map);
+    map[this.state.sel] = goalId;
+    this.setState({ map: map });
+  }
+
+  swatch(e) { return e > 0 ? '#cfdff6' : e < 0 ? '#f7d5d4' : '#e4e3dd'; }
+
+  renderVals() {
+    const self = this;
+    const map = this.state.map;
+    const order = this.state.order;
+
+    const seriesFor = function (goalId) {
+      const members = self.cats.filter(function (c) { return map[c.id] === goalId; });
+      return [0, 1, 2, 3].map(function (w) {
+        return members.reduce(function (a, c) { return a + c.wk[w]; }, 0);
+      });
+    };
+
+    const allSeries = {};
+    order.forEach(function (id) { allSeries[id] = seriesFor(id); });
+    const peak = Math.max(1, Math.max.apply(null, order.map(function (id) {
+      return Math.max.apply(null, allSeries[id]);
+    })));
+
+    const selCat = this.cats.find(function (c) { return c.id === self.state.sel; });
+    const mappedCount = this.cats.filter(function (c) { return map[c.id] !== null; }).length;
+
+    return {
+      goals: order.map(function (id, i) {
+        const s = allSeries[id];
+        const pts = s.map(function (v, w) { return { x: (w / 3) * 120, y: 33 - (v / peak) * 30 }; });
+        const chips = self.cats.filter(function (c) { return map[c.id] === id; });
+        return {
+          rank: String(i + 1),
+          title: self.goalMeta[id],
+          hours: s[3].toFixed(1) + 'h',
+          hoursFg: s[3] === 0 ? '#c0392b' : '#141414',
+          bg: s[3] === 0 ? '#fdf6f5' : 'transparent',
+          spark: pts.map(function (p, w) { return (w === 0 ? 'M ' : 'L ') + p.x.toFixed(1) + ' ' + p.y.toFixed(1); }).join(' '),
+          sparkFg: s[3] >= s[0] ? '#2a78d6' : '#e34948',
+          chips: chips.length ? chips.map(function (c) { return { name: c.name }; }) : [{ name: 'no categories mapped' }],
+          upOff: i === 0 ? 'disabled' : '',
+          downOff: i === order.length - 1 ? 'disabled' : '',
+          up: function () { self.move(id, -1); },
+          down: function () { self.move(id, 1); }
+        };
+      }),
+      cats: this.cats.map(function (c) {
+        const g = map[c.id];
+        const on = c.id === self.state.sel;
+        return {
+          name: c.name,
+          hours: c.wk[3].toFixed(1),
+          goal: g ? self.goalMeta[g] : 'no goal',
+          goalFg: g ? '#141414' : '#b0afa7',
+          swatch: self.swatch(c.e),
+          bg: on ? '#eceae5' : 'transparent',
+          pick: function () { self.setState({ sel: c.id }); }
+        };
+      }),
+      mapped: String(mappedCount),
+      picker: {
+        label: 'DEFAULT GOAL FOR “' + (selCat ? selCat.name.toUpperCase() : '') + '”',
+        options: order.map(function (id) {
+          const on = map[self.state.sel] === id;
+          return {
+            name: self.goalMeta[id],
+            bg: on ? '#141414' : '#fcfcfb',
+            fg: on ? '#fcfcfb' : '#141414',
+            border: on ? '#141414' : '#dcdbd4',
+            pick: function () { self.assign(id); }
+          };
+        }).concat([{
+          name: 'No goal',
+          bg: map[self.state.sel] === null ? '#141414' : '#fcfcfb',
+          fg: map[self.state.sel] === null ? '#fcfcfb' : '#8d8c85',
+          border: map[self.state.sel] === null ? '#141414' : '#dcdbd4',
+          pick: function () { self.assign(null); }
+        }])
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

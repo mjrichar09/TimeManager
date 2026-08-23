@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #f2f2ef; -webkit-font-smoothing: antialiased; }
+    a { color: #2a78d6; text-decoration: none; } a:hover { color: #1c5cab; }
+    .t { font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+    .m { font-family: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace; font-feature-settings: 'tnum' 1; }
+    .btn { appearance: none; font: inherit; cursor: pointer; border-radius: 0; }
+    .tile { appearance: none; border: 1px solid #dcdbd4; background: #eceae5; text-align: left; padding: 12px;
+            cursor: pointer; display: flex; align-items: flex-end; }
+    .step { appearance: none; width: 56px; height: 56px; border: 1px solid #cbcac2; background: #fcfcfb;
+            font: inherit; font-size: 21px; color: #141414; cursor: pointer; }
+    .step:active { background: #eceae4; }
+    .chip { appearance: none; font: inherit; font-size: 13px; padding: 13px 14px; cursor: pointer; border: 1px solid #dcdbd4; }
+  </style>
+</helmet>
+
+<div class="t" style="width: 390px; height: 844px; background: #f2f2ef; color: #141414; display: flex; flex-direction: column; overflow: hidden;">
+
+  <div style="padding: 22px 16px 18px; background: #fcfcfb; border-bottom: 1px solid #d9d8d2;">
+    <div class="m" style="font-size: 10px; letter-spacing: 0.14em; color: #8d8c85;">{{head.kicker}}</div>
+    <div style="font-size: 27px; font-weight: 600; letter-spacing: -0.015em; margin-top: 9px; line-height: 1.15;">{{head.title}}</div>
+
+    <sc-if value="{{ui.askOn}}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; gap: 7px; margin-top: 16px;">
+        <button class="btn" onClick="{{keep}}" style="flex-grow: 1; padding: 15px; background: #141414; color: #fcfcfb; border: 1px solid #141414; font-size: 14px;">Yes, still going</button>
+        <button class="btn" onClick="{{openSplit}}" style="flex-grow: 1; padding: 15px; background: none; color: #141414; border: 1px solid #b9b8b0; font-size: 14px;">Split it</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ui.splitOn}}" hint-placeholder-val="{{ true }}">
+      <div style="margin-top: 18px;">
+        <div style="display: flex; height: 34px; border: 1px solid #cbcac2; background: #f2f2ef;">
+          <div style="background: #cfdff6; border-right: 2px solid #fcfcfb; width: {{split.leftPct}}%;"></div>
+          <div style="background: #eceae5; flex-grow: 1;"></div>
+        </div>
+        <div class="m" style="display: flex; justify-content: space-between; font-size: 10px; color: #8d8c85; margin-top: 6px; letter-spacing: 0.06em;">
+          <span>09:12</span><span>{{split.now}}</span>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px;">
+          <button class="step" onClick="{{minus}}">&#8722;</button>
+          <div style="text-align: center;">
+            <div class="m" style="font-size: 30px; font-weight: 500; letter-spacing: -0.03em;">{{split.at}}</div>
+            <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #8d8c85; margin-top: 2px;">SPLIT POINT</div>
+          </div>
+          <button class="step" onClick="{{plus}}">+</button>
+        </div>
+
+        <div class="m" style="font-size: 10px; letter-spacing: 0.12em; color: #8d8c85; margin-top: 18px;">SECOND HALF BECOMES</div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 8px;">
+          <sc-for list="{{split.options}}" as="o" hint-placeholder-count="4">
+            <button class="chip" onClick="{{o.pick}}" style="background: {{o.bg}}; color: {{o.fg}}; border-color: {{o.border}}; text-align: left;">{{o.name}}</button>
+          </sc-for>
+        </div>
+
+        <button class="btn" onClick="{{confirm}}" style="width: 100%; margin-top: 12px; padding: 16px; background: #141414; color: #fcfcfb; border: 1px solid #141414; font-size: 14px;">{{split.cta}}</button>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; padding: 14px 16px 0; opacity: {{ui.gridOpacity}};">
+    <sc-for list="{{tiles}}" as="t" hint-placeholder-count="9">
+      <button class="tile" style="height: 96px;">
+        <span style="font-size: 15px; font-weight: 500; line-height: 1.2; color: #5a5954;">{{t.name}}</span>
+      </button>
+    </sc-for>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.startMin = 9 * 60 + 12;
+    this.nowMin = 11 * 60 + 4;
+    this.state = { mode: 'ask', splitAt: Math.round((this.startMin + this.nowMin) / 2), second: 'meet' };
+    this.opts = [
+      { id: 'meet',  name: 'Meetings' },
+      { id: 'email', name: 'Email / admin' },
+      { id: 'proj',  name: 'Personal projects' },
+      { id: 'media', name: 'Media / scroll' }
+    ];
+  }
+
+  fmt(min) {
+    return String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0');
+  }
+
+  nudge(delta) {
+    const next = Math.min(this.nowMin - 5, Math.max(this.startMin + 5, this.state.splitAt + delta));
+    this.setState({ splitAt: next });
+  }
+
+  renderVals() {
+    const mode = this.state.mode;
+    const secondName = (this.opts.find((o) => o.id === this.state.second) || this.opts[0]).name;
+    const head = mode === 'ask'
+      ? { kicker: 'OPEN 1H 52M · PAST 90 MINUTES', title: 'Still deep work?' }
+      : mode === 'split'
+        ? { kicker: 'SPLITTING DEEP WORK', title: 'Where did it change?' }
+        : { kicker: 'OPEN SINCE ' + this.fmt(this.state.splitAt), title: mode === 'kept' ? 'Deep work' : secondName };
+
+    return {
+      head: head,
+      ui: {
+        askOn: mode === 'ask',
+        splitOn: mode === 'split',
+        gridOpacity: mode === 'split' ? '0.35' : '1'
+      },
+      split: {
+        at: this.fmt(this.state.splitAt),
+        now: this.fmt(this.nowMin),
+        leftPct: Math.round(((this.state.splitAt - this.startMin) / (this.nowMin - this.startMin)) * 100),
+        cta: 'Split — ' + secondName + ' from ' + this.fmt(this.state.splitAt),
+        options: this.opts.map((o) => ({
+          name: o.name,
+          bg: o.id === this.state.second ? '#141414' : '#fcfcfb',
+          fg: o.id === this.state.second ? '#fcfcfb' : '#141414',
+          border: o.id === this.state.second ? '#141414' : '#dcdbd4',
+          pick: () => this.setState({ second: o.id })
+        }))
+      },
+      keep: () => this.setState({ mode: 'kept' }),
+      openSplit: () => this.setState({ mode: 'split' }),
+      minus: () => this.nudge(-5),
+      plus: () => this.nudge(5),
+      confirm: () => this.setState({ mode: 'done' }),
+      tiles: [
+        { name: 'Deep work' }, { name: 'Meetings' }, { name: 'Email / admin' },
+        { name: 'Kids — active' }, { name: 'Household chores' }, { name: 'Media / scroll' },
+        { name: 'Commute' }, { name: 'Exercise' }, { name: 'Meals' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

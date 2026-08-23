@@ -1,0 +1,297 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #f2f2ef; -webkit-font-smoothing: antialiased; }
+    a { color: #2a78d6; text-decoration: none; } a:hover { color: #1c5cab; }
+    .t { font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+    .m { font-family: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace; font-feature-settings: 'tnum' 1; }
+    .nav { display: block; padding: 9px 12px; font-size: 13px; color: #5a5954; border-left: 2px solid transparent; cursor: pointer; }
+    .nav:hover { color: #141414; background: #eceae5; }
+    .nav.on { color: #141414; border-left-color: #141414; background: #eceae5; font-weight: 500; }
+    .navhead { display: block; padding: 15px 12px 5px; font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 9px; letter-spacing: 0.14em; color: #b0afa7; }
+    .card { background: #fcfcfb; border: 1px solid #d9d8d2; }
+    .missed { background-image: repeating-linear-gradient(135deg, #e2e1da 0 3px, #f2f2ef 3px 6px); }
+    .cell { cursor: pointer; }
+  </style>
+</helmet>
+
+<div class="t" style="width: 1440px; height: 900px; background: #f2f2ef; color: #141414; display: flex; overflow: hidden;">
+
+  <div style="width: 232px; flex-shrink: 0; border-right: 1px solid #d9d8d2; background: #fcfcfb; display: flex; flex-direction: column; padding: 28px 0;">
+    <div style="padding: 0 20px;">
+      <div style="font-size: 19px; font-weight: 600; letter-spacing: -0.01em;">Tally</div>
+      <div class="m" style="font-size: 9px; letter-spacing: 0.14em; color: #8d8c85; margin-top: 5px;">BASELINE · WEEK 6</div>
+    </div>
+    <div style="margin: 24px 20px 0; padding: 10px 12px; border: 1px solid #e6e5df; display: flex; align-items: center; justify-content: space-between;">
+      <span class="m" style="font-size: 11px; color: #8d8c85; cursor: pointer;">&#8249;</span>
+      <span class="m" style="font-size: 11px; letter-spacing: 0.04em;">AUGUST 2026</span>
+      <span class="m" style="font-size: 11px; color: #8d8c85; cursor: pointer;">&#8250;</span>
+    </div>
+    <div style="margin-top: 22px; display: flex; flex-direction: column; gap: 1px;">
+      <span class="navhead">SUMMARY</span>
+      <span class="nav">Week</span>
+      <span class="nav on">Month</span>
+      <span class="navhead">ANALYSIS</span>
+      <span class="nav">Allocation vs. intention</span>
+      <span class="nav">DRIP quadrant</span>
+      <span class="nav">Run chart</span>
+      <span class="navhead">REVIEW</span>
+      <span class="nav">Weekly review</span>
+      <span class="navhead">SET UP</span>
+      <span class="nav">Goals &amp; priorities</span>
+    </div>
+    <div style="margin-top: auto; padding: 0 20px;">
+      <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #a9a8a0; line-height: 1.8;">CAPTURE LIVES<br>ON THE PHONE</div>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; padding: 34px 40px 32px; display: flex; flex-direction: column; gap: 18px; overflow: hidden;">
+
+    <div>
+      <div class="m" style="font-size: 10px; letter-spacing: 0.14em; color: #8d8c85;">MONTH SUMMARY · AUGUST 2026</div>
+      <div style="display: flex; align-items: baseline; gap: 16px; margin-top: 7px;">
+        <div style="font-size: 27px; font-weight: 600; letter-spacing: -0.02em;">Four weeks, one page</div>
+        <div style="font-size: 13px; color: #8d8c85;">Week to week is where a change shows up. Day to day is mostly noise.</div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 14px;">
+      <sc-for list="{{tiles}}" as="s" hint-placeholder-count="4">
+        <div class="card" style="flex-grow: 1; flex-basis: 0; padding: 17px 20px;">
+          <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #8d8c85;">{{s.label}}</div>
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-top: 7px;">
+            <span class="m" style="font-size: 28px; font-weight: 500; letter-spacing: -0.03em;">{{s.value}}</span>
+            <span class="m" style="font-size: 12px; color: {{s.noteFg}};">{{s.note}}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display: flex; gap: 18px; flex-grow: 1; min-height: 0;">
+
+      <div class="card" style="width: 470px; flex-shrink: 0; padding: 22px 24px; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #8d8c85;">END-OF-DAY ENERGY</div>
+          <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: {{readout.fg}};">{{readout.text}}</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; margin-top: 14px;">
+          <sc-for list="{{dow}}" as="d" hint-placeholder-count="7">
+            <div class="m" style="font-size: 9px; letter-spacing: 0.1em; color: #a9a8a0; text-align: center; padding-bottom: 2px;">{{d.label}}</div>
+          </sc-for>
+          <sc-for list="{{cells}}" as="c" hint-placeholder-count="35">
+            <div class="cell {{c.cls}}" onMouseEnter="{{c.hover}}" onMouseLeave="{{unhover}}" style="height: 52px; background: {{c.bg}}; border: 1px solid {{c.border}}; display: flex; flex-direction: column; justify-content: space-between; padding: 5px 6px;">
+              <span class="m" style="font-size: 10px; color: {{c.numFg}};">{{c.num}}</span>
+              <span class="m" style="font-size: 15px; font-weight: 500; color: {{c.valFg}}; align-self: flex-end;">{{c.val}}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: auto; padding-top: 16px; border-top: 1px solid #e6e5df;">
+          <span class="m" style="font-size: 10px; letter-spacing: 0.08em; color: #8d8c85;">4</span>
+          <span style="display: flex; gap: 2px; flex-grow: 1;">
+            <sc-for list="{{ramp}}" as="r" hint-placeholder-count="6">
+              <span style="flex-grow: 1; height: 10px; background: {{r.bg}}; display: block;"></span>
+            </sc-for>
+          </span>
+          <span class="m" style="font-size: 10px; letter-spacing: 0.08em; color: #8d8c85;">9</span>
+          <span class="missed" style="width: 14px; height: 14px; display: block; margin-left: 8px; border: 1px solid #d9d8d2;"></span>
+          <span class="m" style="font-size: 10px; letter-spacing: 0.08em; color: #8d8c85;">MISSED</span>
+        </div>
+      </div>
+
+      <div class="card" style="flex-grow: 1; padding: 22px 24px; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #8d8c85;">HOURS PER WEEK, BY CATEGORY</div>
+          <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #a9a8a0;">W1 · W2 · W3 · W4 &nbsp;&nbsp; MONTH &nbsp;&nbsp; CHANGE</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; margin-top: 12px;">
+          <sc-for list="{{trends}}" as="r" hint-placeholder-count="14">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 4px 0;">
+              <span style="width: 132px; flex-shrink: 0; font-size: 13px; color: #141414; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.name}}</span>
+              <svg viewBox="0 0 200 22" width="200" height="22" style="flex-shrink: 0; display: block; overflow: visible;">
+                <line x1="0" y1="21" x2="200" y2="21" stroke="#efeee9" stroke-width="1"></line>
+                <path d="{{r.d}}" fill="none" stroke="{{r.stroke}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                <circle cx="200" cy="{{r.lastY}}" r="3" fill="{{r.stroke}}"></circle>
+              </svg>
+              <span class="m" style="width: 58px; flex-shrink: 0; font-size: 13px; text-align: right;">{{r.total}}</span>
+              <span class="m" style="width: 52px; flex-shrink: 0; font-size: 13px; text-align: right; color: {{r.deltaFg}};">{{r.delta}}</span>
+              <span style="flex-grow: 1; font-size: 12px; color: #a9a8a0; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.note}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card" style="padding: 18px 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;">
+        <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #8d8c85;">WHERE THE MONTH WENT · WAKING TIME</div>
+        <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #8d8c85;">{{monthTotal}} LOGGED · 4 WEEKS</div>
+      </div>
+      <div style="display: flex; gap: 2px; height: 30px; margin-top: 12px;">
+        <sc-for list="{{stack}}" as="s" hint-placeholder-count="13">
+          <div style="flex-grow: {{s.grow}}; flex-basis: 0; background: {{s.bg}};"></div>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 2px; margin-top: 7px;">
+        <sc-for list="{{stack}}" as="s" hint-placeholder-count="13">
+          <div style="flex-grow: {{s.grow}}; flex-basis: 0; overflow: hidden;">
+            <div style="font-size: 11px; color: #5a5954; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">{{s.label}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+
+    this.series = [
+      { name: 'Deep work',        e: 1,  wk: [16.8, 17.2, 17.9, 18.6], note: '' },
+      { name: 'Kids — active',    e: 1,  wk: [14.1, 14.5, 14.8, 15.2], note: '' },
+      { name: 'Meetings',         e: -1, wk: [14.6, 14.4, 14.2, 11.4], note: '1:1s cut in W4' },
+      { name: 'Meals',            e: 0,  wk: [11.0, 11.2, 11.1, 11.4], note: '' },
+      { name: 'Email / admin',    e: -1, wk: [9.2, 9.4, 9.6, 10.2],    note: 'creeping up' },
+      { name: 'Media / scroll',   e: -1, wk: [7.6, 8.0, 8.4, 9.8],     note: 'up every week' },
+      { name: 'Household chores', e: -1, wk: [10.2, 10.4, 10.6, 8.2],  note: 'yardwork handed off' },
+      { name: 'Commute',          e: -1, wk: [7.4, 7.5, 7.6, 7.8],     note: '' },
+      { name: 'Social / family',  e: 1,  wk: [5.0, 5.2, 5.4, 6.2],     note: '' },
+      { name: 'Kids — logistics', e: -1, wk: [5.2, 5.4, 5.3, 5.1],     note: '' },
+      { name: 'Errands',          e: -1, wk: [4.2, 4.3, 4.4, 4.0],     note: '' },
+      { name: 'Exercise',         e: 1,  wk: [2.2, 2.3, 2.4, 2.6],     note: '' },
+      { name: 'Personal projects', e: 1, wk: [1.2, 1.4, 1.5, 1.9],     note: '' },
+      { name: 'Sleep',            e: 0,  wk: [49.4, 49.1, 48.8, 49.0], note: 'outside waking totals', outside: true }
+    ];
+
+    this.energy = [
+      5, 6, 5, 6, 5, 6, 6,
+      5, null, 6, 5, 6, 7, 6,
+      6, 7, 6, 7, 6, 7, 7,
+      6, 8, 8
+    ];
+    this.state = { day: null };
+  }
+
+  step(v) {
+    if (v === null) return null;
+    if (v <= 4) return '#cde2fb';
+    if (v === 5) return '#b7d3f6';
+    if (v === 6) return '#9ec5f4';
+    if (v === 7) return '#6da7ec';
+    if (v === 8) return '#3987e5';
+    return '#256abf';
+  }
+
+  renderVals() {
+    const self = this;
+
+    const first = new Date(2026, 7, 1);
+    const lead = (first.getDay() + 6) % 7;
+    const daysInMonth = 31;
+    const cells = [];
+    for (let i = 0; i < lead; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+    while (cells.length % 7 !== 0) cells.push(null);
+
+    const waking = this.series.filter(function (s) { return !s.outside; });
+    const monthHours = waking.reduce(function (a, s) {
+      return a + s.wk.reduce(function (x, y) { return x + y; }, 0);
+    }, 0);
+
+    const logged = this.energy.filter(function (v) { return v !== null; });
+    const sorted = logged.slice().sort(function (a, b) { return a - b; });
+    const median = sorted[Math.floor(sorted.length / 2)];
+
+    const stackOrder = waking.slice().sort(function (a, b) {
+      const at = a.wk.reduce(function (x, y) { return x + y; }, 0);
+      const bt = b.wk.reduce(function (x, y) { return x + y; }, 0);
+      return bt - at;
+    });
+
+    return {
+      tiles: [
+        { label: 'WAKING TIME LOGGED', value: monthHours.toFixed(0) + 'h', note: 'across 4 weeks', noteFg: '#8d8c85' },
+        { label: 'DAYS CLOSED', value: '23/24', note: '9 Aug missed', noteFg: '#c0392b' },
+        { label: 'ENERGY MEDIAN', value: String(median), note: 'was 5 in week 1', noteFg: '#2a78d6' },
+        { label: 'CHANGES MADE', value: '2', note: 'both still holding', noteFg: '#8d8c85' }
+      ],
+      dow: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map(function (d) { return { label: d }; }),
+      cells: cells.map(function (d) {
+        if (d === null) {
+          return { cls: '', num: '', val: '', bg: 'transparent', border: 'transparent', numFg: '#a9a8a0', valFg: '#a9a8a0', hover: function () {} };
+        }
+        const v = d <= 24 ? self.energy[d - 1] : undefined;
+        const missed = v === null;
+        const future = v === undefined;
+        const bg = missed ? 'transparent' : future ? '#f7f6f2' : self.step(v);
+        return {
+          cls: missed ? 'missed' : '',
+          num: String(d),
+          val: missed || future ? '' : String(v),
+          bg: bg,
+          border: future ? '#eceae5' : '#e6e5df',
+          numFg: !missed && !future && v >= 8 ? '#cfdff6' : '#8d8c85',
+          valFg: !missed && !future && v >= 7 ? '#fcfcfb' : '#141414',
+          hover: function () {
+            self.setState({
+              day: missed ? d + ' AUG · NOT LOGGED' : future ? '' : d + ' AUG · ENERGY ' + v
+            });
+          }
+        };
+      }),
+      ramp: ['#cde2fb', '#b7d3f6', '#9ec5f4', '#6da7ec', '#3987e5', '#256abf'].map(function (c) { return { bg: c }; }),
+      readout: {
+        text: this.state.day ? this.state.day : 'AUGUST 2026',
+        fg: this.state.day ? '#141414' : '#8d8c85'
+      },
+      trends: this.series.map(function (s) {
+        const max = Math.max.apply(null, s.wk) * 1.15;
+        const pts = s.wk.map(function (v, i) {
+          return { x: (i / 3) * 200, y: 21 - (v / max) * 19 };
+        });
+        const d = s.wk.reduce(function (a, b) { return a + b; }, 0);
+        const change = s.wk[3] - s.wk[0];
+        const towardCharge = (s.e > 0 && change > 0) || (s.e < 0 && change < 0);
+        const towardDrain = (s.e > 0 && change < 0) || (s.e < 0 && change > 0);
+        return {
+          name: s.name,
+          d: pts.map(function (p, i) { return (i === 0 ? 'M ' : 'L ') + p.x.toFixed(1) + ' ' + p.y.toFixed(1); }).join(' '),
+          lastY: pts[3].y.toFixed(1),
+          stroke: s.e > 0 ? '#2a78d6' : s.e < 0 ? '#e34948' : '#a9a8a0',
+          total: d.toFixed(1) + 'h',
+          delta: (change > 0 ? '+' : change < 0 ? '−' : '±') + Math.abs(change).toFixed(1),
+          deltaFg: s.outside || Math.abs(change) < 0.6 ? '#a9a8a0' : towardCharge ? '#2a78d6' : towardDrain ? '#c0392b' : '#5a5954',
+          note: s.note
+        };
+      }),
+      monthTotal: monthHours.toFixed(0) + 'H',
+      stack: stackOrder.map(function (s) {
+        const total = s.wk.reduce(function (a, b) { return a + b; }, 0);
+        return {
+          grow: total.toFixed(1),
+          bg: s.e > 0 ? '#cfdff6' : s.e < 0 ? '#f7d5d4' : '#e4e3dd',
+          label: total / monthHours > 0.05 ? s.name : ''
+        };
+      }),
+      unhover: function () { self.setState({ day: null }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

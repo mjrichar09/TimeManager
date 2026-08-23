@@ -1,0 +1,254 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #f2f2ef; -webkit-font-smoothing: antialiased; }
+    a { color: #2a78d6; text-decoration: none; } a:hover { color: #1c5cab; }
+    .t { font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+    .m { font-family: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace; font-feature-settings: 'tnum' 1; }
+    .nav { display: block; padding: 9px 12px; font-size: 13px; color: #5a5954; border-left: 2px solid transparent; cursor: pointer; }
+    .nav:hover { color: #141414; background: #eceae5; }
+    .nav.on { color: #141414; border-left-color: #141414; background: #eceae5; font-weight: 500; }
+    .navhead { display: block; padding: 15px 12px 5px; font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 9px; letter-spacing: 0.14em; color: #b0afa7; }
+    .card { background: #fcfcfb; border: 1px solid #d9d8d2; }
+    circle { cursor: pointer; }
+  </style>
+</helmet>
+
+<div class="t" style="width: 1440px; height: 900px; background: #f2f2ef; color: #141414; display: flex; overflow: hidden;">
+
+  <div style="width: 232px; flex-shrink: 0; border-right: 1px solid #d9d8d2; background: #fcfcfb; display: flex; flex-direction: column; padding: 28px 0;">
+    <div style="padding: 0 20px;">
+      <div style="font-size: 19px; font-weight: 600; letter-spacing: -0.01em;">Tally</div>
+      <div class="m" style="font-size: 9px; letter-spacing: 0.14em; color: #8d8c85; margin-top: 5px;">BASELINE · WEEK 6</div>
+    </div>
+    <div style="margin: 24px 20px 0; padding: 10px 12px; border: 1px solid #e6e5df; display: flex; align-items: center; justify-content: space-between;">
+      <span class="m" style="font-size: 11px; color: #8d8c85; cursor: pointer;">&#8249;</span>
+      <span class="m" style="font-size: 11px; letter-spacing: 0.04em;">18 – 24 AUG</span>
+      <span class="m" style="font-size: 11px; color: #8d8c85; cursor: pointer;">&#8250;</span>
+    </div>
+    <div style="margin-top: 22px; display: flex; flex-direction: column; gap: 1px;">
+      <span class="navhead">SUMMARY</span>
+      <span class="nav">Week</span>
+      <span class="nav">Month</span>
+      <span class="navhead">ANALYSIS</span>
+      <span class="nav">Allocation vs. intention</span>
+      <span class="nav on">DRIP quadrant</span>
+      <span class="nav">Run chart</span>
+      <span class="navhead">REVIEW</span>
+      <span class="nav">Weekly review</span>
+      <span class="navhead">SET UP</span>
+      <span class="nav">Goals &amp; priorities</span>
+    </div>
+    <div style="margin-top: auto; padding: 0 20px;">
+      <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #a9a8a0; line-height: 1.8;">CAPTURE LIVES<br>ON THE PHONE</div>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; padding: 34px 40px 32px; display: flex; flex-direction: column; gap: 22px; overflow: hidden;">
+
+    <div>
+      <div class="m" style="font-size: 10px; letter-spacing: 0.14em; color: #8d8c85;">DRIP QUADRANT</div>
+      <div style="display: flex; align-items: baseline; gap: 16px; margin-top: 7px;">
+        <div style="font-size: 27px; font-weight: 600; letter-spacing: -0.02em;">What drains you, and what it is worth</div>
+        <div style="font-size: 13px; color: #8d8c85;">Ratings come from the category, not the block. Bubble area is hours this week.</div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 22px; flex-grow: 1; min-height: 0;">
+
+      <div class="card" style="flex-grow: 1; flex-basis: 0; padding: 22px 24px; position: relative;">
+        <svg viewBox="0 0 680 486" width="100%" height="100%" style="display: block; overflow: visible;">
+          <rect x="40" y="230" width="300" height="210" fill="#fbeceb"></rect>
+          <line x1="340" y1="14" x2="340" y2="440" stroke="#d9d8d2" stroke-width="1"></line>
+          <line x1="40" y1="230" x2="640" y2="230" stroke="#d9d8d2" stroke-width="1"></line>
+
+          <text x="52" y="32" class="m" style="font-size: 10px; letter-spacing: 0.12em; fill: #a9a8a0;">INVEST</text>
+          <text x="628" y="32" text-anchor="end" class="m" style="font-size: 10px; letter-spacing: 0.12em; fill: #a9a8a0;">PRODUCE</text>
+          <text x="52" y="428" class="m" style="font-size: 10px; letter-spacing: 0.12em; fill: #c0392b;">DELEGATE</text>
+          <text x="628" y="428" text-anchor="end" class="m" style="font-size: 10px; letter-spacing: 0.12em; fill: #a9a8a0;">REPLACE</text>
+
+          <text x="34" y="76" text-anchor="end" class="m" style="font-size: 10px; fill: #8d8c85;">HIGH</text>
+          <text x="34" y="391" text-anchor="end" class="m" style="font-size: 10px; fill: #8d8c85;">NONE</text>
+          <text x="140" y="464" text-anchor="middle" class="m" style="font-size: 10px; letter-spacing: 0.1em; fill: #8d8c85;">DRAINS</text>
+          <text x="340" y="464" text-anchor="middle" class="m" style="font-size: 10px; letter-spacing: 0.1em; fill: #8d8c85;">NEUTRAL</text>
+          <text x="540" y="464" text-anchor="middle" class="m" style="font-size: 10px; letter-spacing: 0.1em; fill: #8d8c85;">CHARGES</text>
+
+          <sc-for list="{{dots}}" as="d" hint-placeholder-count="13">
+            <g>
+              <circle cx="{{d.cx}}" cy="{{d.cy}}" r="{{d.r}}" fill="{{d.fill}}" stroke="{{d.stroke}}" stroke-width="2" onMouseEnter="{{d.hover}}" onMouseLeave="{{unhover}}"></circle>
+              <text x="{{d.cx}}" y="{{d.ly}}" text-anchor="middle" style="font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 11px; fill: {{d.labelFill}};">{{d.short}}</text>
+            </g>
+          </sc-for>
+        </svg>
+
+        <div style="position: absolute; left: 24px; right: 24px; bottom: 14px; display: flex; gap: 20px; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <span style="width: 11px; height: 11px; border-radius: 50%; background: #f7d5d4; border: 2px solid #e34948; display: block;"></span>
+            <span class="m" style="font-size: 10px; letter-spacing: 0.08em; color: #5a5954;">DRAINS</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <span style="width: 11px; height: 11px; border-radius: 50%; background: #e4e3dd; border: 2px solid #a9a8a0; display: block;"></span>
+            <span class="m" style="font-size: 10px; letter-spacing: 0.08em; color: #5a5954;">NEUTRAL</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <span style="width: 11px; height: 11px; border-radius: 50%; background: #cfdff6; border: 2px solid #2a78d6; display: block;"></span>
+            <span class="m" style="font-size: 10px; letter-spacing: 0.08em; color: #5a5954;">CHARGES</span>
+          </div>
+          <div class="m" style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; color: #a9a8a0;">SLEEP (49.0H) EXCLUDED</div>
+        </div>
+
+        <sc-if value="{{tip.on}}" hint-placeholder-val="{{ true }}">
+          <div class="m" style="position: absolute; left: {{tip.x}}px; top: {{tip.y}}px; background: #141414; color: #fcfcfb; padding: 10px 12px; font-size: 11px; line-height: 1.7; pointer-events: none; white-space: nowrap;">
+            <div style="font-size: 12px; letter-spacing: 0.02em;">{{tip.name}}</div>
+            <div style="color: #a9a8a0;">{{tip.detail}}</div>
+          </div>
+        </sc-if>
+      </div>
+
+      <div class="card" style="width: 404px; flex-shrink: 0; padding: 22px 24px; display: flex; flex-direction: column;">
+        <div class="m" style="font-size: 9px; letter-spacing: 0.12em; color: #8d8c85;">OUTSOURCING QUEUE · LOW VALUE, BY COST</div>
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-top: 12px;">
+          <span class="m" style="font-size: 34px; font-weight: 500; letter-spacing: -0.03em;">$3,341</span>
+          <span style="font-size: 13px; color: #8d8c85;">a month to buy back 27.5h a week</span>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px; padding-bottom: 8px; border-bottom: 1px solid #e6e5df;">
+          <span class="m" style="flex-grow: 1; font-size: 9px; letter-spacing: 0.12em; color: #a9a8a0;">CATEGORY</span>
+          <span class="m" style="width: 46px; text-align: right; font-size: 9px; letter-spacing: 0.12em; color: #a9a8a0;">H/WK</span>
+          <span class="m" style="width: 40px; text-align: right; font-size: 9px; letter-spacing: 0.12em; color: #a9a8a0;">$/HR</span>
+          <span class="m" style="width: 62px; text-align: right; font-size: 9px; letter-spacing: 0.12em; color: #a9a8a0;">PER MO</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+          <sc-for list="{{queue}}" as="q" hint-placeholder-count="6">
+            <div style="display: flex; gap: 10px; align-items: baseline; padding: 11px 0; border-bottom: 1px solid #f0efeb;">
+              <span style="flex-grow: 1; font-size: 13px; color: {{q.fg}};">{{q.name}}</span>
+              <span class="m" style="width: 46px; text-align: right; font-size: 13px; color: #5a5954;">{{q.hours}}</span>
+              <span class="m" style="width: 40px; text-align: right; font-size: 13px; color: #8d8c85;">{{q.rate}}</span>
+              <span class="m" style="width: 62px; text-align: right; font-size: 13px; font-weight: 500; color: {{q.costFg}};">{{q.cost}}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="margin-top: auto; padding-top: 16px;">
+          <div style="font-size: 13px; color: #5a5954; line-height: 1.6; text-wrap: pretty;">
+            Commute and Media / scroll carry no buyback price — they are cut or replaced, not bought.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.cats = [
+      { id: 'deep',    name: 'Deep work',        short: 'Deep work',   e: 1,  v: 3, h: 18.6, rate: null },
+      { id: 'kidsa',   name: 'Kids — active',    short: 'Kids',        e: 1,  v: 3, h: 15.2, rate: null },
+      { id: 'meet',    name: 'Meetings',         short: 'Meetings',    e: -1, v: 2, h: 11.4, rate: null },
+      { id: 'email',   name: 'Email / admin',    short: 'Email',       e: -1, v: 1, h: 10.2, rate: 28 },
+      { id: 'kidsl',   name: 'Kids — logistics', short: 'Kids logi.',  e: -1, v: 1, h: 5.1,  rate: 25 },
+      { id: 'meals',   name: 'Meals',            short: 'Meals',       e: 0,  v: 1, h: 11.4, rate: null },
+      { id: 'commute', name: 'Commute',          short: 'Commute',     e: -1, v: 0, h: 7.8,  rate: null },
+      { id: 'media',   name: 'Media / scroll',   short: 'Media',       e: -1, v: 0, h: 9.8,  rate: null },
+      { id: 'chores',  name: 'Household chores', short: 'Chores',      e: -1, v: 0, h: 8.2,  rate: 32 },
+      { id: 'errands', name: 'Errands',          short: 'Errands',     e: -1, v: 0, h: 4.0,  rate: 24 },
+      { id: 'social',  name: 'Social / family',  short: 'Social',      e: 1,  v: 2, h: 6.2,  rate: null },
+      { id: 'exer',    name: 'Exercise',         short: 'Exercise',    e: 1,  v: 2, h: 2.6,  rate: null },
+      { id: 'proj',    name: 'Personal projects', short: 'Projects',   e: 1,  v: 2, h: 1.9,  rate: null }
+    ];
+    this.state = { hover: null };
+  }
+
+  layout() {
+    const self = this;
+    const colX = { '-1': 140, '0': 340, '1': 540 };
+    const rowY = { '3': 72, '2': 177, '1': 282, '0': 387 };
+    const max = 18.6;
+    const cells = {};
+    this.cats.forEach(function (c) {
+      const key = c.e + ':' + c.v;
+      (cells[key] = cells[key] || []).push(c);
+    });
+    const out = [];
+    Object.keys(cells).forEach(function (key) {
+      const members = cells[key].slice().sort(function (a, b) { return b.h - a.h; });
+      const radii = members.map(function (c) { return 6 + 22 * Math.sqrt(c.h / max); });
+      const total = radii.reduce(function (a, r) { return a + r * 2; }, 0) + (members.length - 1) * 8;
+      let cursor = colX[String(members[0].e)] - total / 2;
+      members.forEach(function (c, i) {
+        const r = radii[i];
+        out.push({ cat: c, r: r, cx: cursor + r, cy: rowY[String(c.v)] });
+        cursor += r * 2 + 8;
+      });
+    });
+    return out;
+  }
+
+  renderVals() {
+    const self = this;
+    const hover = this.state.hover;
+    const placed = this.layout();
+    const hovered = placed.find(function (p) { return p.cat.id === hover; });
+
+    const queue = this.cats
+      .filter(function (c) { return c.v <= 1 && c.e < 0; })
+      .map(function (c) {
+        const cost = c.rate === null ? null : Math.round(c.h * 4.33 * c.rate);
+        return { c: c, cost: cost };
+      })
+      .sort(function (a, b) { return (b.cost || -1) - (a.cost || -1); });
+
+    return {
+      dots: placed.map(function (p) {
+        const c = p.cat;
+        const dim = hover !== null && hover !== c.id;
+        return {
+          cx: String(p.cx), cy: String(p.cy), r: String(p.r),
+          ly: String(p.cy + p.r + 14),
+          short: c.short,
+          fill: c.e > 0 ? '#cfdff6' : c.e < 0 ? '#f7d5d4' : '#e4e3dd',
+          stroke: hover === c.id ? '#141414' : (c.e > 0 ? '#2a78d6' : c.e < 0 ? '#e34948' : '#a9a8a0'),
+          labelFill: dim ? '#b9b8b0' : '#5a5954',
+          hover: function () { self.setState({ hover: c.id }); }
+        };
+      }),
+      tip: hovered
+        ? {
+            on: true,
+            x: Math.round(24 + hovered.cx * 0.86),
+            y: Math.round(22 + hovered.cy * 0.86 - 62),
+            name: hovered.cat.name,
+            detail: hovered.cat.h.toFixed(1) + 'h · value ' + ['none', 'low', 'med', 'high'][hovered.cat.v] +
+                    ' · ' + (hovered.cat.rate === null ? 'no buyback price' : '$' + hovered.cat.rate + '/hr to buy back')
+          }
+        : { on: false, x: 0, y: 0, name: '', detail: '' },
+      queue: queue.map(function (q, i) {
+        return {
+          name: q.c.name,
+          hours: q.c.h.toFixed(1),
+          rate: q.cost === null ? '—' : '$' + q.c.rate,
+          cost: q.cost === null ? 'cut it' : '$' + q.cost.toLocaleString(),
+          fg: '#141414',
+          costFg: i === 0 ? '#c0392b' : q.cost === null ? '#a9a8a0' : '#141414'
+        };
+      }),
+      unhover: function () { self.setState({ hover: null }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

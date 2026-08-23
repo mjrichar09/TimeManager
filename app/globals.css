@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+/* Tally's design tokens. These are the values the screen designs were drawn in —
+   see design/*.dc.html. Colour is reserved for data: red means drain, blue means
+   charge, everything else is neutral. Don't introduce a third accent. */
+@theme {
+  --font-sans: var(--font-plex-sans), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --color-ground: #f2f2ef;
+  --color-surface: #fcfcfb;
+  --color-surface-2: #eceae5;
+
+  --color-ink: #141414;
+  --color-ink-2: #5a5954;
+  --color-ink-3: #8d8c85;
+  --color-ink-4: #a9a8a0;
+
+  --color-rule: #d9d8d2;
+  --color-rule-2: #e6e5df;
+  --color-rule-strong: #b9b8b0;
+
+  /* Data colours. Diverging pair, validated against the light surface. */
+  --color-charge: #2a78d6;
+  --color-charge-fill: #cfdff6;
+  --color-drain: #e34948;
+  --color-drain-fill: #f7d5d4;
+  --color-drain-ink: #c0392b;
+  --color-neutral-fill: #e4e3dd;
+}
+
+body {
+  background: var(--color-ground);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular figures everywhere a duration or a count is shown. */
+.tnum {
+  font-feature-settings: 'tnum' 1;
+}
