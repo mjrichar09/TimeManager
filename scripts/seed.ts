@@ -26,6 +26,10 @@ const CATEGORIES = [
   { slug: 'errands',           name: 'Errands',          energy: -1, value: 0, buyback: 24,   quick: false },
   { slug: 'personal-projects', name: 'Personal projects', energy: 1, value: 2, buyback: null, quick: false },
   { slug: 'social-family',     name: 'Social / family',  energy: 1,  value: 2, buyback: null, quick: false },
+  // energy 0 = not yet rated. The outsourcing queue only picks up energy < 0, so
+  // an unrated category makes no recommendation rather than a confident wrong one.
+  { slug: 'cooking',           name: 'Cooking',          energy: 0,  value: 2, buyback: 25,   quick: true },
+  { slug: 'yard-garden',       name: 'Yard / garden',    energy: 0,  value: 1, buyback: 40,   quick: false },
   { slug: 'sleep',             name: 'Sleep',            energy: 0,  value: 3, buyback: null, quick: true },
 ]
 
