@@ -19,14 +19,14 @@ const CATEGORIES = [
   { slug: 'kids-active',       name: 'Kids — active',    energy: 1,  value: 3, buyback: null, quick: true },
   { slug: 'household-chores',  name: 'Household chores', energy: -1, value: 0, buyback: 32,   quick: true },
   { slug: 'media-scroll',      name: 'Media / scroll',   energy: -1, value: 0, buyback: null, quick: true },
-  { slug: 'commute',           name: 'Commute',          energy: -1, value: 0, buyback: null, quick: false },
+  { slug: 'commute',           name: 'Commute',          energy: -1, value: 0, buyback: null, quick: true },
   { slug: 'kids-logistics',    name: 'Kids — logistics', energy: -1, value: 1, buyback: 25,   quick: false },
   { slug: 'exercise',          name: 'Exercise',         energy: 1,  value: 2, buyback: null, quick: false },
-  { slug: 'meals',             name: 'Meals',            energy: 0,  value: 1, buyback: null, quick: false },
+  { slug: 'meals',             name: 'Meals',            energy: 0,  value: 1, buyback: null, quick: true },
   { slug: 'errands',           name: 'Errands',          energy: -1, value: 0, buyback: 24,   quick: false },
   { slug: 'personal-projects', name: 'Personal projects', energy: 1, value: 2, buyback: null, quick: false },
   { slug: 'social-family',     name: 'Social / family',  energy: 1,  value: 2, buyback: null, quick: false },
-  { slug: 'sleep',             name: 'Sleep',            energy: 0,  value: 3, buyback: null, quick: false },
+  { slug: 'sleep',             name: 'Sleep',            energy: 0,  value: 3, buyback: null, quick: true },
 ]
 
 async function main() {

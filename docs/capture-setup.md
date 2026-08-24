@@ -35,9 +35,21 @@ exercise           meals              errands            personal-projects
 social-family      sleep
 ```
 
-The six marked `is_quick` — deep-work, meetings, email-admin, kids-active,
-household-chores, media-scroll — are the ones worth a home-screen slot. The rest
-are reachable from the app.
+The nine marked `is_quick` are the ones worth a home-screen slot — a 3x3 widget:
+
+| | | |
+|---|---|---|
+| deep-work | meetings | email-admin |
+| kids-active | household-chores | media-scroll |
+| commute | meals | sleep |
+
+The other five are weekly-ish; open the app for those.
+
+**Sleep earns its slot on consequence, not frequency.** Exactly one block is
+always open, so forgetting the bedtime tap leaves the evening running until
+morning — eight hours of the wrong category. Every other missed tap costs
+minutes. You never need a "wake" shortcut: tapping Meals or Kids in the morning
+closes Sleep for you.
 
 ---
 
@@ -55,10 +67,25 @@ switch is genuinely one tap — better than the iOS menu, which costs two.
    - **Response** → *Display in* → **Toast** (shows the `message` field's sentence)
 3. Duplicate it once per quick category, changing only the slug and the name.
 4. Long-press each → **Place on home screen**. Or add the *HTTP Shortcuts* widget
-   and put all six in one grid.
+   and put all nine in one grid.
 
-A six-cell widget on your main home screen is the target. Tap "Deep work", get a
+A 3x3 widget on your main home screen is the target. Tap "Deep work", get a
 toast, carry on.
+
+Two things that make this less tedious to set up:
+
+- Define **Constant variables** (⋮ → Variables) for `token` and `base`, then use
+  `{{token}}` and `{{base}}` in the shortcut. Rotating the token later is then one
+  edit rather than nine.
+- Use a **Form data** body with parameter `category` instead of JSON. The endpoint
+  accepts both, and form data has no quotes for autocorrect to mangle.
+
+To show the sentence rather than raw JSON, put this in *Scripting → Run on
+success* and set the display type to *Do nothing*:
+
+```js
+showToast(JSON.parse(response.body).message);
+```
 
 ### Installing the app itself
 
