@@ -100,6 +100,14 @@ export default function CheckClient() {
         <p className="mt-7 max-w-[260px] text-sm leading-relaxed text-ink-3">
           Nothing else to do here. The week reads itself on Sunday.
         </p>
+        {/* "Offers nothing else" means no streaks and no dashboard to linger
+            over — not stranding you on a screen with no way back to capture. */}
+        <Link
+          href="/"
+          className="mt-9 font-mono text-[10px] tracking-[0.12em] text-ink-4 underline underline-offset-4"
+        >
+          BACK TO CAPTURE
+        </Link>
       </main>
     )
   }
@@ -193,14 +201,12 @@ export default function CheckClient() {
         >
           {ready ? 'Done' : 'Answer both to finish'}
         </button>
-        {!day?.complete ? (
-          <Link
-            href={`/reconcile?date=${window.date}`}
-            className="mt-3 block text-center font-mono text-[10px] tracking-[0.12em] text-ink-4"
-          >
-            RECONCILE THE DAY FIRST
+        <div className="mt-3 flex justify-between font-mono text-[10px] tracking-[0.12em] text-ink-4">
+          <Link href="/">← CAPTURE</Link>
+          <Link href={`/reconcile?date=${window.date}`}>
+            {day?.complete ? 'RECONCILE' : 'RECONCILE THE DAY FIRST'}
           </Link>
-        ) : null}
+        </div>
       </div>
     </main>
   )

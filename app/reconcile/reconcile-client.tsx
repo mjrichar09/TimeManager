@@ -11,6 +11,7 @@ import {
   loadDayAction,
   moveEdgeAction,
   recategorizeAction,
+  splitBlockAction,
   type ActionResult,
 } from '../actions'
 
@@ -49,6 +50,29 @@ function duration(minutes: number): string {
   return m === 0 ? `${h}h` : `${h}h ${String(m).padStart(2, '0')}m`
 }
 
+/** "HH:MM" in local time, for a native <input type="time">. */
+function toTimeValue(iso: string): string {
+  const d = new Date(iso)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+/**
+ * Turn "HH:MM" back into an instant, anchored to the day `base` falls on. If the
+ * result lands before `base` it belongs to the next day — which happens for a
+ * segment running up to midnight.
+ */
+function fromTimeValue(base: string, hhmm: string): string {
+  const anchor = new Date(base)
+  const [h, m] = hhmm.split(':').map(Number)
+  const candidate = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), h, m, 0, 0)
+  if (candidate.getTime() < anchor.getTime()) candidate.setDate(candidate.getDate() + 1)
+  return candidate.toISOString()
+}
+
+function midpoint(a: string, b: string): string {
+  return new Date(Math.round((new Date(a).getTime() + new Date(b).getTime()) / 2 / 60000) * 60000).toISOString()
+}
+
 function fill(segment: Segment, selected: boolean): string {
   if (segment.kind === 'gap') return 'transparent'
   if (selected) return segment.energy > 0 ? '#7fb0ea' : segment.energy < 0 ? '#ef9a99' : '#c9c7bd'
@@ -61,6 +85,8 @@ export default function ReconcileClient({ categories }: { categories: Category[]
   const [day, setDay] = useState<Day | null>(null)
   const [selected, setSelected] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const [splitTime, setSplitTime] = useState<string | null>(null)
+  const [fillUntil, setFillUntil] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
   const window = useMemo(() => localWindow(offset), [offset])
@@ -71,8 +97,12 @@ export default function ReconcileClient({ categories }: { categories: Category[]
   }, [])
 
   const dispatch = useCallback(
-    (work: () => Promise<ActionResult>) => {
-      startTransition(async () => apply(await work()))
+    (work: () => Promise<ActionResult>, onSuccess?: () => void) => {
+      startTransition(async () => {
+        const result = await work()
+        apply(result)
+        if (result.ok) onSuccess?.()
+      })
     },
     [apply]
   )
@@ -83,6 +113,8 @@ export default function ReconcileClient({ categories }: { categories: Category[]
       const result = await loadDayAction(window)
       if (cancelled) return
       setSelected(0)
+      setSplitTime(null)
+      setFillUntil(null)
       apply(result)
     })
     return () => {
@@ -148,7 +180,11 @@ export default function ReconcileClient({ categories }: { categories: Category[]
             <button
               key={`${segment.kind}-${segment.startedAt}`}
               type="button"
-              onClick={() => setSelected(index)}
+              onClick={() => {
+                setSelected(index)
+                setSplitTime(null)
+                setFillUntil(null)
+              }}
               aria-label={`${segment.name} ${clock(segment.startedAt)}`}
               className={`block h-full min-w-[8px] ${segment.kind === 'gap' ? 'gap-hatch' : ''}`}
               style={{
@@ -239,8 +275,65 @@ export default function ReconcileClient({ categories }: { categories: Category[]
             </div>
           ) : null}
 
+          {!isGap && current.id ? (
+            <div className="mt-4 flex items-end gap-2.5 border-t border-rule-2 pt-3.5">
+              <div className="flex-1">
+                <div className="font-mono text-[9px] tracking-[0.12em] text-ink-3">
+                  SPLIT AT
+                </div>
+                <input
+                  type="time"
+                  value={splitTime ?? toTimeValue(midpoint(current.startedAt, current.endedAt))}
+                  onChange={(event) => setSplitTime(event.target.value)}
+                  className="tnum mt-1.5 w-full border border-rule bg-surface px-2.5 py-3 font-mono text-[17px] outline-none focus:border-rule-strong"
+                />
+              </div>
+              <button
+                type="button"
+                disabled={pending || current.minutes < 2}
+                onClick={() =>
+                  dispatch(
+                    () =>
+                      splitBlockAction(
+                        window,
+                        current.id!,
+                        fromTimeValue(
+                          current.startedAt,
+                          splitTime ?? toTimeValue(midpoint(current.startedAt, current.endedAt))
+                        )
+                      ),
+                    // Land on the second half — the piece you split off is
+                    // almost always the one you meant to relabel.
+                    () => setSelected((i) => i + 1)
+                  )
+                }
+                className="border border-ink bg-ink px-4 py-3.5 text-sm text-surface disabled:opacity-40"
+              >
+                Split
+              </button>
+            </div>
+          ) : null}
+
+          {isGap ? (
+            <div className="mt-4 border-t border-rule-2 pt-3.5">
+              <div className="font-mono text-[9px] tracking-[0.12em] text-ink-3">
+                FILL FROM {clock(current.startedAt)} UNTIL
+              </div>
+              <input
+                type="time"
+                value={fillUntil ?? toTimeValue(current.endedAt)}
+                onChange={(event) => setFillUntil(event.target.value)}
+                className="tnum mt-1.5 w-full border border-rule bg-surface px-2.5 py-3 font-mono text-[17px] outline-none focus:border-rule-strong"
+              />
+              <p className="mt-1.5 text-[11px] leading-snug text-ink-3">
+                Defaults to the whole gap. Shorten it to log one thing at a time — what is
+                left stays a gap.
+              </p>
+            </div>
+          ) : null}
+
           <div className="mt-4 font-mono text-[9px] tracking-[0.12em] text-ink-3">
-            {isGap ? `FILL ${duration(current.minutes)} WITH` : 'RECATEGORISE'}
+            {isGap ? 'FILL WITH' : 'RECATEGORISE'}
           </div>
           <div className="mt-2 grid grid-cols-3 gap-[5px]">
             {categories.map((category) => {
@@ -253,7 +346,14 @@ export default function ReconcileClient({ categories }: { categories: Category[]
                   onClick={() =>
                     dispatch(() =>
                       isGap
-                        ? fillGapAction(window, current.startedAt, current.endedAt, category.slug)
+                        ? fillGapAction(
+                            window,
+                            current.startedAt,
+                            fillUntil
+                              ? fromTimeValue(current.startedAt, fillUntil)
+                              : current.endedAt,
+                            category.slug
+                          )
                         : recategorizeAction(window, current.id!, category.slug)
                     )
                   }

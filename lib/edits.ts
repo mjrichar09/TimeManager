@@ -206,6 +206,54 @@ export async function splitOpenBlock(atISO: string, slug: string): Promise<void>
   ])
 }
 
+/**
+ * Cut a block in two at `atISO`. Both halves keep the original category, so the
+ * second is then recategorised the normal way.
+ *
+ * This is what makes a gap fillable with more than one thing: fill it, split it,
+ * relabel the piece. Splitting the running block leaves the second half open.
+ */
+export async function splitBlock(blockId: string, atISO: string): Promise<void> {
+  const sql = getSql()
+  const uid = userId()
+
+  const rows = (await sql`
+    select id, category_id, goal_id, started_at, ended_at from blocks
+    where id = ${blockId} and user_id = ${uid}
+  `) as Array<{
+    id: string
+    category_id: string
+    goal_id: string | null
+    started_at: string
+    ended_at: string | null
+  }>
+  if (rows.length === 0) throw new EditError('Block not found')
+
+  const block = rows[0]
+  const at = new Date(atISO).getTime()
+  const start = new Date(block.started_at).getTime()
+  const end = block.ended_at ? new Date(block.ended_at).getTime() : Date.now()
+
+  if (at <= start) throw new EditError('The split has to be after the block starts')
+  if (at >= end) throw new EditError('The split has to be before the block ends')
+
+  // Close the original first, then open the second half — in that order the
+  // one_open_block index never sees two open blocks, even mid-transaction.
+  await sql.transaction([
+    sql`update blocks set ended_at = ${atISO}::timestamptz where id = ${blockId} and user_id = ${uid}`,
+    block.ended_at
+      ? sql`
+          insert into blocks (user_id, category_id, goal_id, started_at, ended_at, source)
+          values (${uid}, ${block.category_id}, ${block.goal_id},
+                  ${atISO}::timestamptz, ${block.ended_at}::timestamptz, 'reconcile')
+        `
+      : sql`
+          insert into blocks (user_id, category_id, goal_id, started_at, source)
+          values (${uid}, ${block.category_id}, ${block.goal_id}, ${atISO}::timestamptz, 'reconcile')
+        `,
+  ])
+}
+
 /** Delete a block, leaving a gap where it was. */
 export async function deleteBlock(blockId: string): Promise<void> {
   const sql = getSql()

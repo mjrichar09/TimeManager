@@ -11,6 +11,7 @@ import {
   moveEdge,
   recategorize,
   saveCheck,
+  splitBlock,
   splitOpenBlock,
 } from '@/lib/edits'
 
@@ -98,6 +99,14 @@ export async function splitOpenAction(
   slug: string
 ): Promise<ActionResult> {
   return run(window, () => splitOpenBlock(atISO, slug))
+}
+
+export async function splitBlockAction(
+  window: Window,
+  blockId: string,
+  atISO: string
+): Promise<ActionResult> {
+  return run(window, () => splitBlock(blockId, atISO))
 }
 
 export async function completeDayAction(window: Window): Promise<ActionResult> {
