@@ -9,8 +9,18 @@ export type Segment = {
   energy: number
   startedAt: string
   endedAt: string
-  /** True when this is the running block; endedAt is then "now". */
-  open: boolean
+  /**
+   * The block has no ended_at — it is the one currently running. True even when
+   * viewing a past day that it started in, so the controls stay honest: you
+   * can't drag the end of a block that hasn't ended.
+   */
+  running: boolean
+  /**
+   * Running AND this window ends at now, so `endedAt` really does mean "now".
+   * False for a running block seen from a past day, where it is clamped to that
+   * day's midnight and showing "now" would be a lie.
+   */
+  live: boolean
   minutes: number
 }
 
@@ -51,8 +61,8 @@ export async function getDay(date: string, fromISO: string, toISO: string): Prom
   const sql = getSql()
   const uid = userId()
 
-  const now = new Date().toISOString()
-  const to = new Date(toISO).getTime() > new Date(now).getTime() ? now : toISO
+  const nowMs = Date.now()
+  const to = new Date(toISO).getTime() > nowMs ? new Date(nowMs).toISOString() : toISO
 
   const rows = (await sql`
     select
@@ -99,14 +109,15 @@ export async function getDay(date: string, fromISO: string, toISO: string): Prom
       energy: 0,
       startedAt: new Date(from).toISOString(),
       endedAt: new Date(until).toISOString(),
-      open: false,
+      running: false,
+      live: false,
       minutes: Math.round((until - from) / MS_PER_MINUTE),
     })
   }
 
   for (const row of rows) {
     const start = Math.max(windowStart, new Date(row.started_at).getTime())
-    const rawEnd = row.ended_at ? new Date(row.ended_at).getTime() : Date.now()
+    const rawEnd = row.ended_at ? new Date(row.ended_at).getTime() : nowMs
     const end = Math.min(windowEnd, rawEnd)
     if (end <= start) continue
 
@@ -122,7 +133,8 @@ export async function getDay(date: string, fromISO: string, toISO: string): Prom
       energy: Number(row.energy),
       startedAt,
       endedAt,
-      open: row.ended_at === null,
+      running: row.ended_at === null,
+      live: row.ended_at === null && end >= Math.min(windowEnd, nowMs),
       minutes: minutesBetween(startedAt, endedAt),
     })
 

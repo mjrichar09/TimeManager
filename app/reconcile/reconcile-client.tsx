@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import type { Day, Segment } from '@/lib/day'
 import {
   completeDayAction,
@@ -27,6 +28,16 @@ function localWindow(offsetDays: number) {
   }
 }
 
+/** How many days back a given YYYY-MM-DD is from today, local time. */
+function offsetForDate(date: string | null): number {
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return 0
+  const [y, m, d] = date.split('-').map(Number)
+  const then = new Date(y, m - 1, d)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  return Math.max(0, Math.round((today.getTime() - then.getTime()) / 86_400_000))
+}
+
 function clock(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
 }
@@ -45,7 +56,8 @@ function fill(segment: Segment, selected: boolean): string {
 }
 
 export default function ReconcileClient({ categories }: { categories: Category[] }) {
-  const [offset, setOffset] = useState(0)
+  const params = useSearchParams()
+  const [offset, setOffset] = useState(() => offsetForDate(params.get('date')))
   const [day, setDay] = useState<Day | null>(null)
   const [selected, setSelected] = useState(0)
   const [error, setError] = useState<string | null>(null)
@@ -165,12 +177,12 @@ export default function ReconcileClient({ categories }: { categories: Category[]
           <div
             className={`font-mono text-[10px] tracking-[0.14em] ${isGap ? 'text-drain-ink' : 'text-ink-3'}`}
           >
-            {isGap ? 'UNLOGGED GAP' : current.open ? 'RUNNING NOW' : 'SELECTED BLOCK'}
+            {isGap ? 'UNLOGGED GAP' : current.live ? 'RUNNING NOW' : 'SELECTED BLOCK'}
           </div>
           <div className="mt-2 flex items-baseline justify-between gap-3">
             <div className="text-[19px] font-semibold tracking-tight">{current.name}</div>
             <div className="tnum font-mono text-[13px] text-ink-2">
-              {clock(current.startedAt)} – {current.open ? 'now' : clock(current.endedAt)}
+              {clock(current.startedAt)} – {current.live ? 'now' : clock(current.endedAt)}
             </div>
           </div>
 
@@ -202,7 +214,7 @@ export default function ReconcileClient({ categories }: { categories: Category[]
                 <div className="mt-1.5 flex items-center gap-1.5">
                   <button
                     type="button"
-                    disabled={pending || current.open}
+                    disabled={pending || current.running}
                     onClick={() => dispatch(() => moveEdgeAction(window, current.id!, 'end', -5))}
                     className="size-[46px] border border-rule-strong bg-surface text-[17px] active:bg-surface-2 disabled:opacity-40"
                   >
@@ -210,7 +222,7 @@ export default function ReconcileClient({ categories }: { categories: Category[]
                   </button>
                   <button
                     type="button"
-                    disabled={pending || current.open}
+                    disabled={pending || current.running}
                     onClick={() => dispatch(() => moveEdgeAction(window, current.id!, 'end', 5))}
                     className="size-[46px] border border-rule-strong bg-surface text-[17px] active:bg-surface-2 disabled:opacity-40"
                   >
@@ -255,7 +267,7 @@ export default function ReconcileClient({ categories }: { categories: Category[]
             })}
           </div>
 
-          {!isGap && current.id && !current.open ? (
+          {!isGap && current.id && !current.running ? (
             <button
               type="button"
               disabled={pending}
@@ -271,7 +283,7 @@ export default function ReconcileClient({ categories }: { categories: Category[]
       <div className="mt-auto border-t border-rule p-4">
         {day.complete ? (
           <Link
-            href="/check"
+            href={`/check?date=${day.date}`}
             className="block w-full border border-ink bg-ink px-3 py-[17px] text-center text-[15px] text-surface"
           >
             Day complete — go to check

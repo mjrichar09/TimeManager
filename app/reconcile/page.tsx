@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { getSql, userId } from '@/lib/db'
 import ReconcileClient, { type Category } from './reconcile-client'
 
@@ -14,5 +15,9 @@ async function loadCategories(): Promise<Category[]> {
 }
 
 export default async function ReconcilePage() {
-  return <ReconcileClient categories={await loadCategories()} />
+  return (
+    <Suspense fallback={null}>
+      <ReconcileClient categories={await loadCategories()} />
+    </Suspense>
+  )
 }

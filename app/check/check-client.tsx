@@ -3,12 +3,25 @@
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
 import type { Day } from '@/lib/day'
+import { useSearchParams } from 'next/navigation'
 import { loadDayAction, saveCheckAction, type ActionResult } from '../actions'
 
-function localWindow() {
-  const now = new Date()
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+/**
+ * The day being checked, from ?date=YYYY-MM-DD, falling back to today.
+ *
+ * It has to be explicit: reconciling yesterday morning and then answering the
+ * check would otherwise write energy and moved_priority against today, and
+ * silently mark today complete before it had happened.
+ */
+function windowFor(date: string | null) {
   const pad = (n: number) => String(n).padStart(2, '0')
+  const parsed = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date.split('-').map(Number) : null
+  const start = parsed
+    ? new Date(parsed[0], parsed[1] - 1, parsed[2])
+    : (() => {
+        const now = new Date()
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      })()
   return {
     date: `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`,
     from: start.toISOString(),
@@ -24,7 +37,8 @@ function duration(minutes: number): string {
 }
 
 export default function CheckClient() {
-  const [window] = useState(localWindow)
+  const params = useSearchParams()
+  const [window] = useState(() => windowFor(params.get('date')))
   const [day, setDay] = useState<Day | null>(null)
   const [energy, setEnergy] = useState<number | null>(null)
   const [moved, setMoved] = useState<boolean | null>(null)
@@ -181,7 +195,7 @@ export default function CheckClient() {
         </button>
         {!day?.complete ? (
           <Link
-            href="/reconcile"
+            href={`/reconcile?date=${window.date}`}
             className="mt-3 block text-center font-mono text-[10px] tracking-[0.12em] text-ink-4"
           >
             RECONCILE THE DAY FIRST

@@ -113,7 +113,7 @@ async function main() {
   const splitAt = new Date(Date.now() - 60 * 60_000).toISOString()
   await edits.splitOpenBlock(splitAt, 'media-scroll')
   day = await getDay(win.date, win.from, win.to)
-  const running = day.segments.find((s) => s.open)
+  const running = day.segments.find((s) => s.live)
   check('running block is now media-scroll', running?.slug === 'media-scroll', String(running?.slug))
   check('running block is ~60m', running !== undefined && Math.abs(running.minutes - 60) <= 1, `${running?.minutes}m`)
   check('no gap created by the split', !day.segments.some((s) => s.kind === 'gap' && s.startedAt === splitAt))
