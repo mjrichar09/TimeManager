@@ -32,18 +32,24 @@ a new one and update the env var — nothing else depends on it.
 deep-work          meetings           email-admin        kids-active
 household-chores   media-scroll       commute            kids-logistics
 exercise           meals              errands            personal-projects
-social-family      sleep
+social-family      sleep              cooking            yard-garden
+personal-fun
 ```
 
-The nine marked `is_quick` are the ones worth a home-screen slot — a 3x3 widget:
+The eleven marked `is_quick` are the ones worth a home-screen slot — a 4x3 widget
+with one slot spare:
 
-| | | |
-|---|---|---|
-| deep-work | meetings | email-admin |
-| kids-active | household-chores | media-scroll |
-| commute | meals | sleep |
+| | | | |
+|---|---|---|---|
+| deep-work | meetings | email-admin | kids-active |
+| household-chores | cooking | meals | commute |
+| media-scroll | personal-fun | sleep | |
 
-The other five are weekly-ish; open the app for those.
+The other six are weekly-ish; open the app for those.
+
+**Personal fun sits next to Media / scroll on purpose.** They are the two things
+an evening can turn into, and the only moment you can tell them apart is the
+moment you start. Reaching for one means passing over the other.
 
 **Sleep earns its slot on consequence, not frequency.** Exactly one block is
 always open, so forgetting the bedtime tap leaves the evening running until
@@ -67,16 +73,16 @@ switch is genuinely one tap — better than the iOS menu, which costs two.
    - **Response** → *Display in* → **Toast** (shows the `message` field's sentence)
 3. Duplicate it once per quick category, changing only the slug and the name.
 4. Long-press each → **Place on home screen**. Or add the *HTTP Shortcuts* widget
-   and put all nine in one grid.
+   and put all eleven in one grid.
 
-A 3x3 widget on your main home screen is the target. Tap "Deep work", get a
+A 4x3 widget on your main home screen is the target. Tap "Deep work", get a
 toast, carry on.
 
 Two things that make this less tedious to set up:
 
 - Define **Constant variables** (⋮ → Variables) for `token` and `base`, then use
   `{{token}}` and `{{base}}` in the shortcut. Rotating the token later is then one
-  edit rather than nine.
+  edit rather than eleven.
 - Use a **Form data** body with parameter `category` instead of JSON. The endpoint
   accepts both, and form data has no quotes for autocorrect to mangle.
 

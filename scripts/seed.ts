@@ -31,6 +31,9 @@ const CATEGORIES = [
   { slug: 'cooking',           name: 'Cooking',          energy: 0,  value: 2, buyback: 25,   quick: true },
   { slug: 'yard-garden',       name: 'Yard / garden',    energy: 0,  value: 1, buyback: 40,   quick: false },
   { slug: 'sleep',             name: 'Sleep',            energy: 0,  value: 3, buyback: null, quick: true },
+  // Fun with nothing to show for it afterwards — as opposed to Personal projects,
+  // which accumulates, and Media / scroll, which happens to you.
+  { slug: 'personal-fun',      name: 'Personal fun',     energy: 0,  value: 2, buyback: null, quick: true },
 ]
 
 async function main() {
