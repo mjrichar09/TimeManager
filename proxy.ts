@@ -13,6 +13,13 @@ export default async function proxy(request: NextRequest) {
 export const config = {
   // Everything except the login page, the login/switch endpoints, and static assets.
   // /api/switch authenticates itself with a bearer token so the Shortcut never
-  // touches the cookie flow.
-  matcher: ['/((?!login|api/login|api/switch|_next/static|_next/image|favicon.ico|manifest.webmanifest|icons/).*)'],
+  // touches the cookie flow; /api/cron/* checks CRON_SECRET, which is what
+  // Vercel sends instead of a cookie.
+  //
+  // sw.js and the Rounds manifest are excluded because a 307 to /login is not a
+  // service worker and not a manifest: the browser fetches both outside any
+  // page's session and would silently fail to install the app.
+  matcher: [
+    '/((?!login|api/login|api/switch|api/cron|sw.js|_next/static|_next/image|favicon.ico|manifest.webmanifest|rounds/manifest.webmanifest|icons/).*)',
+  ],
 }

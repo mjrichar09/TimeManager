@@ -9,20 +9,25 @@
     "lint": "eslint",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
-    "db:setup": "npm run db:migrate && npm run db:seed"
+    "db:seed-rounds": "tsx scripts/seed-rounds.ts",
+    "db:setup": "npm run db:migrate && npm run db:seed && npm run db:seed-rounds",
+    "icons": "tsx scripts/icons.ts && tsx scripts/rounds-icons.ts",
+    "test:plan": "tsx scripts/test-rounds-plan.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
     "jose": "^6.2.10",
     "next": "16.3.2",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.3.2",
     "tailwindcss": "^4",
