@@ -98,25 +98,31 @@ settings screen rather than silently vanishing.
 
 ### 3. The cron
 
-`vercel.json` runs `/api/cron/rounds` hourly. The route does the deciding:
+`vercel.json` runs `/api/cron/rounds` once a day at **07:00 UTC**. The route does
+the deciding:
 
 - it sends only once the local hour has reached your notify hour, and
 - `chore_settings.last_digest_on` guarantees exactly one digest per local day.
 
-This is deliberate. Vercel crons fire on a fixed UTC schedule and the hour you
-want to be told is a local one that moves twice a year, so the schedule is coarse
-and the logic lives in code that knows your timezone.
+This split is deliberate. Vercel crons fire on a fixed UTC schedule and the hour
+you want to be told is a local one that moves twice a year, so the schedule is
+coarse and the logic lives in code that knows your timezone.
 
-**On the Hobby plan, cron jobs may run at most once a day** and are only
-scheduled to within an hour. If the deploy rejects the hourly schedule, change it
-to a daily one at roughly the right UTC hour:
+**The cron hour has to be at least your notify hour, in UTC.** With one run a
+day there is no second chance: if the cron fires before your notify hour the
+route answers `too_early` and that day's notification is simply lost. London is
+UTC+0 in winter and UTC+1 in summer, so the winter case is the binding one —
+a 07:00 notify hour needs the cron at 07:00 UTC or later, which then arrives at
+07:00 GMT and 08:00 BST. Firing an hour late in summer beats going silent every
+winter.
 
-```json
-{ "path": "/api/cron/rounds", "schedule": "0 6 * * *" }
-```
+If you raise the notify hour on the settings screen, raise this schedule to
+match. There is nothing that checks the two agree.
 
-Everything else keeps working — you just lose the retry if the one run of the day
-fails.
+Hobby accounts are limited to **one cron run per day** — an hourly schedule is
+rejected at deploy time with `deploy_failed`, not at runtime. On Pro, `0 * * * *`
+is better: the hour check still holds the send until the right moment, and a run
+that fails gets retried later the same day instead of being lost.
 
 To check it by hand:
 
