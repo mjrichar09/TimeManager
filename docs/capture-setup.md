@@ -95,9 +95,15 @@ showToast(JSON.parse(response.body).message);
 
 ### Installing the app itself
 
-Chrome → your app URL → menu → **Add to Home screen**. It opens fullscreen with no
-browser chrome. There is nothing to sideload and no developer account involved —
-it's a web app, not an APK.
+Chrome → `https://<your-app>/tally` → menu → **Add to Home screen**. It opens
+fullscreen with no browser chrome. There is nothing to sideload and no developer
+account involved — it's a web app, not an APK.
+
+**Install it from /tally, not from /.** Tally moved out of the origin root so that
+Rounds (docs/rounds.md) could be a second installable app: two PWAs can share an
+origin only when neither scope contains the other, and an app scoped to `/`
+swallows every sibling. `/` still redirects here, but a home-screen install has
+to start at the real start_url or the browser records the wrong one.
 
 ---
 
@@ -118,7 +124,7 @@ employer manages.
 5. Assign it to the **Action Button** (iPhone 15 Pro and newer) or **Back Tap**
    (Settings → Accessibility → Touch → Back Tap).
 
-Add the PWA with Safari → Share → **Add to Home Screen**.
+Add the PWA with Safari → Share → **Add to Home Screen**, from `/tally`.
 
 ---
 

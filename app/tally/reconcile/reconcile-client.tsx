@@ -383,7 +383,7 @@ export default function ReconcileClient({ categories }: { categories: Category[]
       <div className="mt-auto border-t border-rule p-4">
         {day.complete ? (
           <Link
-            href={`/check?date=${day.date}`}
+            href={`/tally/check?date=${day.date}`}
             className="block w-full border border-ink bg-ink px-3 py-[17px] text-center text-[15px] text-surface"
           >
             Day complete — go to check

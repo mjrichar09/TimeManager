@@ -1,17 +1,22 @@
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; next?: string }>
 }) {
-  const { error } = await searchParams
+  const { error, next } = await searchParams
 
   return (
     <main className="flex min-h-dvh flex-col justify-center px-8">
       <div className="mx-auto w-full max-w-sm">
-        <h1 className="text-2xl font-semibold tracking-tight">Tally</h1>
-        <p className="mt-2 text-sm text-ink-3">One user. One password.</p>
+        {/* Neutral, because this page now gates both apps and naming one of
+            them makes arriving from the other read as a wrong turn. */}
+        <h1 className="text-2xl font-semibold tracking-tight">Tally &amp; Rounds</h1>
+        <p className="mt-2 text-sm text-ink-3">One user. One password. Two apps.</p>
 
         <form action="/api/login" method="post" className="mt-8">
+          {/* Where the proxy was taking them. One password opens two apps, so
+              the destination has to survive the round trip. */}
+          <input type="hidden" name="next" value={next ?? ''} />
           <label htmlFor="password" className="font-mono text-[10px] tracking-[0.14em] text-ink-3">
             PASSWORD
           </label>

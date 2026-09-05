@@ -9,6 +9,13 @@ Tally, and shares its login. What makes it a separate *app* is `/rounds`: its ow
 manifest, its own icon and its own scope, so it installs to the home screen as a
 second thing you open.
 
+**Both apps sit one level down, and that is load-bearing.** Two installable PWAs
+can share an origin only when neither scope contains the other. Tally originally
+claimed `/`, which swallowed `/rounds` — installing Rounds from the home screen
+updated Tally instead of creating a second icon. So Tally moved to `/tally` and
+the two now sit side by side, `/` redirecting to Tally for anything that still
+points there. Do not give either app the root scope back.
+
 ## The idea
 
 Three moving parts, and the third is the point:

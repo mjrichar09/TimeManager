@@ -350,7 +350,7 @@ export default function CaptureGrid({
 
       <div className="mt-auto border-t border-rule p-4">
         <Link
-          href="/reconcile"
+          href="/tally/reconcile"
           className="block w-full border border-rule-strong px-3 py-3.5 text-center text-[13px] text-ink-2"
         >
           End the day

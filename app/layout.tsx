@@ -14,19 +14,11 @@ const plexMono = IBM_Plex_Mono({
   weight: ['400', '500'],
 })
 
+// Deliberately thin. This layout is shared by Tally, Rounds and the login page,
+// so it carries only what all three need — fonts, the ground colour, the
+// viewport. Each app names itself in its own layout.
 export const metadata: Metadata = {
-  title: 'Tally',
-  description: 'Time audit and goal alignment.',
-  // iOS ignores the manifest's display mode; this is what makes an
-  // added-to-home-screen launch open without Safari chrome.
-  appleWebApp: {
-    capable: true,
-    title: 'Tally',
-    statusBarStyle: 'default',
-  },
-  icons: {
-    apple: '/icons/icon-180.png',
-  },
+  title: 'Tally & Rounds',
 }
 
 export const viewport: Viewport = {

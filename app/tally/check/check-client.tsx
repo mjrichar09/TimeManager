@@ -103,7 +103,7 @@ export default function CheckClient() {
         {/* "Offers nothing else" means no streaks and no dashboard to linger
             over — not stranding you on a screen with no way back to capture. */}
         <Link
-          href="/"
+          href="/tally"
           className="mt-9 font-mono text-[10px] tracking-[0.12em] text-ink-4 underline underline-offset-4"
         >
           BACK TO CAPTURE
@@ -202,7 +202,7 @@ export default function CheckClient() {
           {ready ? 'Done' : 'Answer both to finish'}
         </button>
         <div className="mt-3 flex justify-between font-mono text-[10px] tracking-[0.12em] text-ink-4">
-          <Link href="/">← CAPTURE</Link>
+          <Link href="/tally">← CAPTURE</Link>
           <Link href={`/reconcile?date=${window.date}`}>
             {day?.complete ? 'RECONCILE' : 'RECONCILE THE DAY FIRST'}
           </Link>
