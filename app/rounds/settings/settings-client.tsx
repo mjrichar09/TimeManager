@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, useTransition } from 'react'
+import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import type { RoundsView, Settings } from '@/lib/rounds'
 import {
   saveSettingsAction,
@@ -12,6 +12,22 @@ import {
 import { minutesLabel } from '../format'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+/**
+ * Enough zones to pick from if the browser can't enumerate them itself. Every
+ * engine Rounds runs on supports Intl.supportedValuesOf, so this is a floor,
+ * not the real list — see `zones` below.
+ */
+const FALLBACK_ZONES = [
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'Europe/London',
+  'Europe/Dublin',
+  'Europe/Paris',
+  'UTC',
+]
 
 /** VAPID keys travel as base64url; PushManager wants raw bytes. */
 function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
@@ -136,6 +152,23 @@ export default function SettingsClient({
 
   const total = settings.dayMinutes.reduce((n, m) => n + m, 0)
 
+  /**
+   * The whole IANA list, straight from the browser, so the zone can never be a
+   * typo — a misspelled zone made every date in the app quietly wrong, since
+   * "today" is computed from it. The saved value is folded in regardless, so a
+   * zone this browser doesn't know still shows as selected rather than
+   * silently becoming whatever sorts first.
+   */
+  const zones = useMemo(() => {
+    let all: string[]
+    try {
+      all = Intl.supportedValuesOf('timeZone')
+    } catch {
+      all = FALLBACK_ZONES
+    }
+    return all.includes(settings.timezone) ? all : [settings.timezone, ...all]
+  }, [settings.timezone])
+
   return (
     <main className="pt-6">
       <h1 className="text-[27px] font-semibold tracking-tight">Settings</h1>
@@ -216,15 +249,21 @@ export default function SettingsClient({
             <label className="font-mono text-[9px] tracking-[0.12em] text-ink-3" htmlFor="timezone">
               TIMEZONE
             </label>
-            <input
+            <select
               id="timezone"
               value={settings.timezone}
               onChange={(event) => {
                 setSettings({ ...settings, timezone: event.target.value })
                 setSaved(false)
               }}
-              className="mt-1 w-full border border-rule bg-surface px-2 py-1.5 text-[13px] outline-none focus:border-rule-strong"
-            />
+              className="mt-1 w-full border border-rule bg-surface px-2 py-1.5 text-[13px]"
+            >
+              {zones.map((zone) => (
+                <option key={zone} value={zone}>
+                  {zone.replace(/_/g, ' ')}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

@@ -105,7 +105,7 @@ settings screen rather than silently vanishing.
 
 ### 3. The cron
 
-`vercel.json` runs `/api/cron/rounds` once a day at **07:00 UTC**. The route does
+`vercel.json` runs `/api/cron/rounds` once a day at **12:00 UTC**. The route does
 the deciding:
 
 - it sends only once the local hour has reached your notify hour, and
@@ -115,21 +115,28 @@ This split is deliberate. Vercel crons fire on a fixed UTC schedule and the hour
 you want to be told is a local one that moves twice a year, so the schedule is
 coarse and the logic lives in code that knows your timezone.
 
-**The cron hour has to be at least your notify hour, in UTC.** With one run a
-day there is no second chance: if the cron fires before your notify hour the
-route answers `too_early` and that day's notification is simply lost. London is
-UTC+0 in winter and UTC+1 in summer, so the winter case is the binding one —
-a 07:00 notify hour needs the cron at 07:00 UTC or later, which then arrives at
-07:00 GMT and 08:00 BST. Firing an hour late in summer beats going silent every
-winter.
+**The rule: the cron hour, converted to local time at the largest UTC offset of
+the year, must still be at or past your notify hour.** With one run a day there
+is no second chance — fire early and the route answers `too_early`, and that
+day's notification is simply lost.
 
-If you raise the notify hour on the settings screen, raise this schedule to
-match. There is nothing that checks the two agree.
+For `America/New_York` and a 07:00 notify hour, winter binds: EST is UTC-5, so
+the cron needs 12:00 UTC, arriving at 07:00 EST and 08:00 EDT. Firing an hour
+late in summer beats going silent every winter.
+
+Changing either the zone or the notify hour on the settings screen means
+recomputing this schedule. Nothing checks that the two agree:
+
+| Zone | Notify hour | Cron (UTC) |
+|---|---|---|
+| `America/New_York` | 07:00 | `0 12 * * *` |
+| `America/Los_Angeles` | 07:00 | `0 15 * * *` |
+| `Europe/London` | 07:00 | `0 7 * * *` |
 
 Hobby accounts are limited to **one cron run per day** — an hourly schedule is
 rejected at deploy time with `deploy_failed`, not at runtime. On Pro, `0 * * * *`
-is better: the hour check still holds the send until the right moment, and a run
-that fails gets retried later the same day instead of being lost.
+removes the whole problem: the hour check holds the send until the right moment
+whatever the zone, and a failed run is retried later the same day.
 
 To check it by hand:
 

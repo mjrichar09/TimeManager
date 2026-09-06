@@ -62,10 +62,35 @@ export type RoundsView = {
   pushDevices: number
 }
 
-/** Today's date in the user's timezone, as 'YYYY-MM-DD'. */
+/** The zone used when the stored one turns out not to be a zone at all. */
+export const FALLBACK_TIMEZONE = 'America/New_York'
+
+/** Does the runtime recognise this as an IANA zone? */
+export function isValidTimezone(timezone: string): boolean {
+  try {
+    new Intl.DateTimeFormat('en-CA', { timeZone: timezone })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Today's date in the user's timezone, as 'YYYY-MM-DD'.
+ *
+ * Falls back rather than throwing. Intl.DateTimeFormat raises a RangeError on an
+ * unknown zone, and this function sits underneath every Rounds page — a single
+ * bad string in one column took the entire app down with 500s once, which is an
+ * absurdly large blast radius for a settings field. Being a day out in an
+ * unexpected zone is recoverable; being unable to open the app to fix it is not.
+ */
 export function todayIn(timezone: string): string {
+  const zone = isValidTimezone(timezone) ? timezone : FALLBACK_TIMEZONE
+  if (zone !== timezone) {
+    console.error(`chore_settings.timezone is not a valid zone: ${timezone} — using ${zone}`)
+  }
   return new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
+    timeZone: zone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -97,7 +122,7 @@ export async function getSettings(): Promise<Settings> {
   if (rows.length === 0) {
     // No row yet — the migration's defaults, so a fresh database renders rather
     // than erroring on the way to the settings screen.
-    return { dayMinutes: [20, 20, 20, 20, 20, 120, 60], notifyHour: 7, timezone: 'Europe/London' }
+    return { dayMinutes: [20, 20, 20, 20, 20, 120, 60], notifyHour: 7, timezone: 'America/New_York' }
   }
   return {
     dayMinutes: rows[0].day_minutes.map(Number),
@@ -472,6 +497,11 @@ export async function saveSettings(settings: Settings): Promise<void> {
     settings.notifyHour > 23
   ) {
     throw new RoundsError('Notify hour must be between 0 and 23')
+  }
+  // The screen offers a dropdown, but a server action is a public endpoint and
+  // this column is the one every date in the app is measured against.
+  if (!isValidTimezone(settings.timezone)) {
+    throw new RoundsError(`${settings.timezone} is not a timezone — pick one from the list`)
   }
   const sql = getSql()
   await sql`

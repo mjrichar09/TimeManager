@@ -24,5 +24,12 @@ export default async function PlanPage({
 
   const [view, suggestion] = await Promise.all([getRoundsView(start), suggestForWeek(start)])
 
-  return <PlanClient initial={view} suggestion={suggestion} />
+  // Keyed by the week so the arrows work.
+  //
+  // PlanClient seeds all of its state from these props — the board is a local
+  // copy you shuffle before saving, which is the whole point of it. Navigating
+  // to ?week=… re-renders the same component instance, and React keeps the
+  // state it already has, so without a key the server would fetch the new week
+  // and the screen would carry on showing the old one.
+  return <PlanClient key={start} initial={view} suggestion={suggestion} />
 }
