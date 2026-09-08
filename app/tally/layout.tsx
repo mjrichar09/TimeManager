@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import TallyNav from './tally-nav'
 
 /**
  * Tally's own identity, moved down here out of the root layout.
@@ -23,5 +24,12 @@ export const metadata: Metadata = {
 }
 
 export default function TallyLayout({ children }: { children: React.ReactNode }) {
-  return children
+  // The column is what lets each screen keep its own footer pinned to the
+  // bottom: the nav takes its natural height, the page below it takes the rest.
+  return (
+    <div className="flex min-h-dvh flex-col">
+      <TallyNav />
+      {children}
+    </div>
+  )
 }

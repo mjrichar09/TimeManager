@@ -34,6 +34,9 @@ const CATEGORIES = [
   // Fun with nothing to show for it afterwards — as opposed to Personal projects,
   // which accumulates, and Media / scroll, which happens to you.
   { slug: 'personal-fun',      name: 'Personal fun',     energy: 0,  value: 2, buyback: null, quick: true },
+  // Showering, teeth, getting dressed. Short, frequent, and otherwise the
+  // morning and evening gaps you can't reconstruct on the reconcile strip.
+  { slug: 'personal-care',     name: 'Personal care',    energy: 0,  value: 1, buyback: null, quick: true },
 ]
 
 async function main() {

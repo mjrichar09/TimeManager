@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
-import Link from 'next/link'
 import type { OpenBlock } from '@/lib/switch'
 import { splitOpenAction } from './actions'
 
@@ -165,7 +164,7 @@ export default function CaptureGrid({
     new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
 
   return (
-    <main className="flex min-h-dvh flex-col">
+    <main className="flex flex-1 flex-col">
       <header className="relative border-b border-rule px-4 pt-6 pb-4">
         {open ? (
           <>
@@ -346,15 +345,6 @@ export default function CaptureGrid({
             </button>
           )
         })}
-      </div>
-
-      <div className="mt-auto border-t border-rule p-4">
-        <Link
-          href="/tally/reconcile"
-          className="block w-full border border-rule-strong px-3 py-3.5 text-center text-[13px] text-ink-2"
-        >
-          End the day
-        </Link>
       </div>
     </main>
   )

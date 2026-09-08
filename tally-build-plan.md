@@ -132,13 +132,24 @@ The Shortcut is: Choose from Menu (6 `is_quick` categories) → Get Contents of 
 
 ## 5. Screens
 
-### Mobile (PWA) — three screens, no navigation bar
+### Mobile (PWA) — three screens behind a three-tab bar
+
+The original plan said "no navigation bar", on the reasoning that the day has a
+shape — capture all day, reconcile at the end — and a nav bar invites you to
+wander. In use the shape held but the one-way street didn't: the common reason
+to open reconcile is not that the day is over, it is that you mislabelled a
+block an hour ago and want to fix it and carry on. A single "End the day"
+button at the bottom of capture made that a trip you couldn't come back from.
+The bar is three tabs and no more, and it is the thing that made the calendar
+reachable at all.
 
 **Capture.** Full-bleed grid of large category tiles, `is_quick` first. Header strip: "Deep work · 47m". Tap → POST, haptic, brief confirmation, auto-return to a dismissed state. If the open block exceeds 90 minutes, the header becomes a prompt: "Still deep work?" / "Split it" — split opens a minimal time picker defaulting to the midpoint.
 
 **Reconcile.** One horizontal strip of the day, proportional. Tap a segment to change category or drag its edges. Gaps highlighted in red. A "Day complete" button that closes the day.
 
-**Daily check.** Appears after reconcile. Energy 1–10 as a row of taps, one yes/no on whether you moved a priority, optional note. Then the app says done and offers nothing else.
+**Calendar.** A month of squares, one per day, coloured by how far that day got: untouched, complete, or checked. Tap a square to reconcile that day. It is deliberately the only screen that looks backwards further than yesterday, and it shows state rather than totals — the question it answers is "which days did I not finish", not "how did I do", which is the weekly review's job and belongs on a desktop screen.
+
+**Daily check.** Appears after reconcile, and has no tab of its own — it is the last step of closing a day, not a place you navigate to. Energy 1–10 as a row of taps, one yes/no on whether you moved a priority, optional note. Then the app says done and offers nothing else.
 
 ### Desktop — reports only
 

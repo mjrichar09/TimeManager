@@ -79,7 +79,7 @@ export default function CheckClient() {
   // app offers nothing after it — no streak, no summary, nothing to linger over.
   if (saved) {
     return (
-      <main className="flex min-h-dvh flex-col justify-center px-8">
+      <main className="flex flex-1 flex-col justify-center px-8">
         <div className="font-mono text-[10px] tracking-[0.14em] text-ink-3">
           {new Date(`${window.date}T12:00:00`).toLocaleDateString([], {
             weekday: 'short',
@@ -113,7 +113,7 @@ export default function CheckClient() {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col">
+    <main className="flex flex-1 flex-col">
       <div className="px-4 pt-6 pb-4">
         <div className="font-mono text-[10px] tracking-[0.14em] text-ink-3">
           DAILY CHECK ·{' '}
@@ -203,7 +203,7 @@ export default function CheckClient() {
         </button>
         <div className="mt-3 flex justify-between font-mono text-[10px] tracking-[0.12em] text-ink-4">
           <Link href="/tally">← CAPTURE</Link>
-          <Link href={`/reconcile?date=${window.date}`}>
+          <Link href={`/tally/reconcile?date=${window.date}`}>
             {day?.complete ? 'RECONCILE' : 'RECONCILE THE DAY FIRST'}
           </Link>
         </div>

@@ -124,7 +124,7 @@ export default function ReconcileClient({ categories }: { categories: Category[]
 
   if (!day) {
     return (
-      <main className="flex min-h-dvh items-center justify-center">
+      <main className="flex flex-1 items-center justify-center">
         <p className="font-mono text-[10px] tracking-[0.14em] text-ink-3">LOADING THE DAY…</p>
       </main>
     )
@@ -140,7 +140,7 @@ export default function ReconcileClient({ categories }: { categories: Category[]
   })
 
   return (
-    <main className="flex min-h-dvh flex-col">
+    <main className="flex flex-1 flex-col">
       <header className="px-4 pt-6 pb-3">
         <div className="flex items-center justify-between">
           <button
