@@ -1,8 +1,11 @@
 # Goals — working record
 
-Started 2026-08-24. **Not yet entered in the app.** Stopped at step 6 of 7.
+Started 2026-08-24. Updated 2026-09-09. **Not yet entered in the app.**
+Stopped at step 7 of 7.
 
-To resume: read this file, then answer the open question at the bottom.
+To resume: read this file, then do step 7 — map categories to goals and enter
+all five in the app. Do it before the week-4 report lands (~2026-09-20), or the
+allocation report has no goals to allocate against.
 
 ---
 
@@ -48,8 +51,8 @@ The build plan never cites anyone, but its vocabulary maps onto:
 3. Quality tests ✅
 4. Forced rank ✅
 5. Lead measures — 4 of 5 done
-6. **Name the displacement ← we are here**
-7. Map categories → goals, enter in the app
+6. Name the displacement ✅
+7. **Map categories → goals, enter in the app ← we are here**
 
 ---
 
@@ -93,7 +96,8 @@ source. C isn't competing with A/D/E; it's paying for them.
 ### Rank notes
 
 - **D at rank 4 is safe.** Rank decides what wins when goals contend; D draws
-  from early mornings, a pool nothing else wants. 45 min/week.
+  from early mornings, a pool nothing else wants. 45 min/week. — *Disputed
+  2026-09-09: A's lead measure claims the same mornings. See "Open — goal D".*
 - **E at rank 5 won't happen** unless time-boxed. Pending over a year already.
   One named zone per month, zones listed up front.
 
@@ -145,9 +149,11 @@ is the only source that scales to that number. Recruiting only from friends ends
 with good feedback and no channel.
 
 **Counting backwards from January:** recruit 3–4 wks, run beta 4–6, act and ship
-4–6, first customers 4–8 = 15–24 weeks. January is ~22 weeks out. Achievable with
-almost no slack, and the whole chain gates on recruitment — the one step that
-hasn't started and the cheapest one. Every week it slips, January slips with it.
+4–6, first customers 4–8 = 15–24 weeks. Written 2026-08-24, when January was
+~22 weeks out. As of 2026-09-09 it is **~20.6 weeks** and recruitment still has
+not started — at the pessimistic end of the estimate the slack is now gone. The
+whole chain gates on the cheapest step, and every week it slips, January slips
+with it.
 
 **He is his own user.** Building a house-comparison app while house-hunting means
 dogfooding on his own shortlist, and open houses are populated by people with
@@ -156,18 +162,62 @@ competing — same hours serve both.
 
 ---
 
-## Open question — resume here
+## Displacement — settled 2026-09-09
 
-**Step 6: every goal names what it displaces.**
+Three named, as candidates from his own answers:
 
-His hours are already full. A goal without a subtraction is arithmetic that
-doesn't balance, and the week-4 allocation report will show that whether it's
-named or not.
+1. **Media / scroll**
+2. **Yard work and cleaning** — if C buys them back
+3. **Commute** — if the working-from-home lever gets pushed
 
-> **Where do these hours come from? Name three things to stop doing, or stop
-> doing personally.**
+**Only the first is unilateral.** Two and three are downstream of conversations
+that haven't happened, which makes them a plan rather than a subtraction. If
+week 4 shows the arithmetic still doesn't balance, the missing hours have to
+come from somewhere he controls alone. Expect the tracking data to suggest more
+candidates — that was the explicit reason for not forcing a longer list now.
 
-Candidates from his own answers: Media / scroll; yard work and cleaning if C buys
-them back; commute if the working-from-home lever gets pushed.
+---
 
-Then step 7: map categories → goals and enter all five in the app.
+## Open — goal D and the doctor
+
+Seeing a doctor about the carrying pain. In progress as of 2026-09-09. What it
+changes about D:
+
+- **The lead measure is a hypothesis, and a diagnosis tests it.** Hip mobility
+  and posterior chain was designed without a diagnosis. If a prescription
+  arrives, it wins outright — don't run both routines, or which one worked is
+  unknowable. Watch for a generic "stretch more", which leaves the hypothesis
+  untested while feeling like progress.
+- **The target moves.** L gets heavier over the twelve months, so the test in
+  September 2027 is harder than today's. Maintaining capacity may not be enough.
+  Ask directly whether progressive loading is indicated — "prehab, not volume"
+  was an assumption, not an answer.
+- **Twelve months is too long a feedback loop.** Every other goal has a weekly
+  signal; D has one reading, a year out. Needs an intermediate measure — pain
+  frequency, or a repeatable carry test — or a wrong approach only surfaces
+  when it's too late to change.
+- **The constraint is calendar, not hours.** GP → imaging → physio is weeks of
+  waiting. D fails on a booking not made, not on a morning not used.
+- **"Never miss twice" needs an exception.** That rule is about motivation. A
+  missed session here may be a symptom, not a lapse, and the rule as written
+  pushes through a flare. State the distinction.
+
+### Two links the ranking missed
+
+- **D should inform C's priorities.** When the DRIP data lands, drains that load
+  the injury are expensive in D as well as in dollars — a tiebreaker for what to
+  buy back first. E is lifting work and cuts the same way.
+- **A and D compete for the same morning.** A is "Tuesday and Thursday, 30
+  minutes, first thing"; D is "3×/week, 15 minutes, before anyone's up". D's
+  rank-4 safety argument says early mornings are "a pool nothing else wants" —
+  but A wants it. On Tue/Thu that's 45 minutes before anyone's up, not 15.
+  Either stagger the days or drop the claim that the pool is uncontested.
+
+---
+
+## Open — goal B
+
+The Sunday-evening conversation has not happened yet. Intended "soon" as of
+2026-09-09. It is the top-ranked goal, the one thing that can't be implemented
+unilaterally, and C's lead measure is downstream of it — so it gates the
+displacement plan above, not just B.
