@@ -81,6 +81,7 @@ const blankDraft = {
   dueOn: '',
   periodMonths: 12 as number | null,
   leadDays: 30,
+  effortMinutes: 30,
   notes: '',
 }
 
@@ -111,6 +112,7 @@ export default function RenewalsClient({ initial }: { initial: RenewalsView }) {
       dueOn: draft.dueOn,
       periodMonths: draft.periodMonths,
       leadDays: draft.leadDays,
+      effortMinutes: draft.effortMinutes,
       notes: draft.notes.trim() || null,
     }
     if (editing) {
@@ -136,6 +138,7 @@ export default function RenewalsClient({ initial }: { initial: RenewalsView }) {
       dueOn: renewal.dueOn,
       periodMonths: renewal.periodMonths,
       leadDays: renewal.leadDays,
+      effortMinutes: renewal.effortMinutes,
       notes: renewal.notes ?? '',
     })
   }
@@ -197,6 +200,22 @@ export default function RenewalsClient({ initial }: { initial: RenewalsView }) {
             onChange={(e) => setDraft({ ...draft, leadDays: Number(e.target.value) })}
             className="tnum mt-1.5 w-full border border-rule bg-surface px-2.5 py-2 font-mono text-sm outline-none focus:border-rule-strong"
           />
+        </label>
+        <label className="block">
+          <span className="font-mono text-[9px] tracking-[0.12em] text-ink-3">
+            MINUTES IT TAKES
+          </span>
+          <input
+            type="number"
+            min={1}
+            max={600}
+            value={draft.effortMinutes}
+            onChange={(e) => setDraft({ ...draft, effortMinutes: Number(e.target.value) })}
+            className="tnum mt-1.5 w-full border border-rule bg-surface px-2.5 py-2 font-mono text-sm outline-none focus:border-rule-strong"
+          />
+          <span className="mt-1 block text-[11px] leading-snug text-ink-3">
+            What the weekly planner budgets against once this enters its window.
+          </span>
         </label>
       </div>
 
@@ -285,7 +304,7 @@ export default function RenewalsClient({ initial }: { initial: RenewalsView }) {
         }`}
       >
         {longDateWithYear(renewal.dueOn)} · {periodLabel(renewal.periodMonths)} · warns{' '}
-        {renewal.leadDays}d ahead
+        {renewal.leadDays}d ahead · {renewal.effortMinutes}m
       </div>
 
       {renewal.notes ? (

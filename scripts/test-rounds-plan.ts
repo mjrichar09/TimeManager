@@ -25,12 +25,12 @@ function chore(
   dueOn: string,
   preferWeekend = false
 ): Candidate {
-  return { choreId: id, name: id, effortMinutes: effort, dueOn, preferWeekend }
+  return { itemId: id, name: id, effortMinutes: effort, dueOn, preferWeekend }
 }
 
-function dayOf(plan: ReturnType<typeof suggestWeek>, choreId: string): string | null {
+function dayOf(plan: ReturnType<typeof suggestWeek>, itemId: string): string | null {
   for (const day of plan.days) {
-    if (day.items.some((i) => i.choreId === choreId)) return day.date
+    if (day.items.some((i) => i.itemId === itemId)) return day.date
   }
   return null
 }
@@ -95,7 +95,7 @@ console.log('\ncapacity is respected, and the shortfall is reported')
   })
   check('the small one fits', dayOf(plan, 'small-one') !== null)
   check('the big one does not', dayOf(plan, 'big-one') === null)
-  check('and is reported', plan.unplanned.some((u) => u.choreId === 'big-one'))
+  check('and is reported', plan.unplanned.some((u) => u.itemId === 'big-one'))
   check('with a reason', plan.unplanned[0]?.reason === 'no-capacity')
   check('no day is over its capacity', plan.days.every((d) => d.usedMinutes <= d.capacityMinutes))
 }

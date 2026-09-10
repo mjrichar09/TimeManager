@@ -105,6 +105,38 @@ weekly — an expired licence is news again.
 The pure half — staging, month arithmetic, and the decision to speak — is in
 `lib/renewals.ts` and covered by `npx tsx scripts/test-renewals.ts`.
 
+### In the weekly plan
+
+A renewal inside its lead window stops being a date to know about and becomes a
+twenty-minute errand — which is what the planner already places. The suggester
+never cared what it was placing: it wants an id, a size in minutes and a date to
+land on or before, and a renewal has all three. So `chore_plan` gained a second
+possible subject rather than a twin table, guarded by a check constraint that
+exactly one of `chore_id` / `renewal_id` is set.
+
+The planner speaks **refs** — `chore:<uuid>` or `renewal:<uuid>`. The board, the
+suggester and the save action pass them around without branching; only `getPlan`
+and `saveWeekPlan`, at the database boundary, know how one is spelled. That is
+why `lib/rounds-plan.ts` needed no logic change at all, only `choreId` renamed
+to `itemId` to stop the name lying.
+
+**Only renewals inside their lead window are plannable.** One beyond it is not
+offered anywhere — not in the suggestion, not in the "+ add" picker. Getting
+ahead is a chore's privilege: a free Saturday is the right moment for the
+hedges, and is no help at all with a passport you cannot renew yet.
+
+Two consequences worth knowing:
+
+- **The suggester still only auto-places what is due by the end of the week**,
+  the same rule chores follow. A renewal with a 180-day lead is warned about
+  from day one but auto-placed only in the week it is actually due; pull it
+  forward by hand from the picker any week in between.
+- **A renewal cannot be ticked off on the Today screen.** Completing one needs
+  the new expiry date from the paperwork, and a one-tap ✓ that invented that
+  date would be exactly the bug this feature exists to avoid — so the row links
+  to the renewals screen instead. Renewing there closes the planned row, the
+  same way completing a chore does.
+
 ### Two sends, not one
 
 The cron sends renewal warnings as a **separate** push from the chore digest,

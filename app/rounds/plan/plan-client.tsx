@@ -11,19 +11,19 @@ import {
 } from '../actions'
 import { dayOfMonth, dueLabel, minutesLabel, weekdayName } from '../format'
 
-type Item = { choreId: string; date: string }
+type Item = { itemId: string; date: string }
 
 /** Flatten a suggestion into the flat list the board and the save action both speak. */
 function itemsOf(suggestion: SuggestedWeek): Item[] {
   return suggestion.days.flatMap((day) =>
-    day.items.map((i) => ({ choreId: i.choreId, date: day.date }))
+    day.items.map((i) => ({ itemId: i.itemId, date: day.date }))
   )
 }
 
-/** Keys the committed plan by chore and day, which is how the board identifies a row. */
+/** Keys the committed plan by subject and day, which is how the board identifies a row. */
 function committedKeys(view: RoundsView): Set<string> {
   return new Set(
-    view.plan.filter((p) => p.status === 'planned').map((p) => `${p.choreId}|${p.plannedOn}`)
+    view.plan.filter((p) => p.status === 'planned').map((p) => `${p.ref}|${p.plannedOn}`)
   )
 }
 
@@ -44,7 +44,7 @@ export default function PlanClient({
   const [dirty, setDirty] = useState(() => {
     const committed = committedKeys(initial)
     const proposed = itemsOf(suggestion)
-    return proposed.length !== committed.size || proposed.some((i) => !committed.has(`${i.choreId}|${i.date}`))
+    return proposed.length !== committed.size || proposed.some((i) => !committed.has(`${i.itemId}|${i.date}`))
   })
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
@@ -57,7 +57,10 @@ export default function PlanClient({
     [start]
   )
 
-  const chores = useMemo(() => new Map(view.chores.map((c) => [c.id, c])), [view.chores])
+  const byRef = useMemo(
+    () => new Map(view.plannable.map((p) => [p.ref, p])),
+    [view.plannable]
+  )
 
   // What is already committed, so a proposal can be told apart from a plan.
   const committed = useMemo(() => committedKeys(view), [view])
@@ -68,7 +71,7 @@ export default function PlanClient({
     [view.plan]
   )
 
-  const onBoard = useMemo(() => new Set(items.map((i) => i.choreId)), [items])
+  const onBoard = useMemo(() => new Set(items.map((i) => i.itemId)), [items])
 
   const change = useCallback((next: Item[]) => {
     setItems(next)
@@ -104,22 +107,24 @@ export default function PlanClient({
   }, [start])
 
   const totalMinutes = items.reduce(
-    (n, i) => n + (chores.get(i.choreId)?.effortMinutes ?? 0),
+    (n, i) => n + (byRef.get(i.itemId)?.effortMinutes ?? 0),
     0
   )
   const totalCapacity = capacity.reduce((n, c) => n + c, 0)
 
   // Everything that has a claim on this week and isn't on the board.
   const weekEnd = addDays(start, 6)
-  const leftOut = view.chores
-    .filter((c) => !onBoard.has(c.id) && dayNumber(c.dueOn) <= dayNumber(weekEnd))
-    .filter((c) => !settled.some((p) => p.choreId === c.id))
+  const leftOut = view.plannable
+    .filter((c) => !onBoard.has(c.ref) && dayNumber(c.dueOn) <= dayNumber(weekEnd))
+    .filter((c) => !settled.some((p) => p.ref === c.ref))
     .sort((a, b) => dayNumber(a.dueOn) - dayNumber(b.dueOn))
 
   // Anything at all, for the "+ add" picker — including things not due for weeks,
   // because a free Saturday is the right moment to get ahead of the hedges.
-  const addable = view.chores
-    .filter((c) => !onBoard.has(c.id))
+  // Renewals outside their lead window are not in `plannable` at all, which is
+  // the point: getting ahead is a chore's privilege, not a renewal's.
+  const addable = view.plannable
+    .filter((c) => !onBoard.has(c.ref))
     .sort((a, b) => dayNumber(a.dueOn) - dayNumber(b.dueOn))
 
   return (
@@ -130,7 +135,7 @@ export default function PlanClient({
             {dayOfMonth(start)} &ndash; {dayOfMonth(addDays(start, 6))}
           </h1>
           <p className="tnum text-[13px] text-ink-3">
-            {items.length} chore{items.length === 1 ? '' : 's'} · {minutesLabel(totalMinutes)} of{' '}
+            {items.length} item{items.length === 1 ? '' : 's'} · {minutesLabel(totalMinutes)} of{' '}
             {minutesLabel(totalCapacity)}
           </p>
         </div>
@@ -193,7 +198,7 @@ export default function PlanClient({
       <div className="mt-5 flex flex-col gap-2">
         {dates.map((date, index) => {
           const dayItems = items.filter((i) => i.date === date)
-          const used = dayItems.reduce((n, i) => n + (chores.get(i.choreId)?.effortMinutes ?? 0), 0)
+          const used = dayItems.reduce((n, i) => n + (byRef.get(i.itemId)?.effortMinutes ?? 0), 0)
           const cap = capacity[index] ?? 0
           const over = used > cap
           const isToday = date === view.today
@@ -243,38 +248,45 @@ export default function PlanClient({
                   ) : null}
 
                   {dayItems.map((item) => {
-                    const chore = chores.get(item.choreId)
-                    if (!chore) return null
-                    const late = dayNumber(date) > dayNumber(chore.dueOn)
-                    const isCommitted = committed.has(`${item.choreId}|${date}`)
+                    const subject = byRef.get(item.itemId)
+                    if (!subject) return null
+                    const late = dayNumber(date) > dayNumber(subject.dueOn)
+                    const isCommitted = committed.has(`${item.itemId}|${date}`)
 
                     return (
                       <div
-                        key={item.choreId}
+                        key={item.itemId}
                         className={`flex flex-wrap items-center gap-x-3 gap-y-1 border px-3 py-2 ${
                           isCommitted ? 'border-rule-2' : 'border-dashed border-rule'
                         }`}
                       >
-                        <span className="min-w-[140px] flex-1 text-[14px]">{chore.name}</span>
+                        <span className="min-w-[140px] flex-1 text-[14px]">
+                          {subject.name}
+                          {subject.kind === 'renewal' ? (
+                            <span className="ml-2 font-mono text-[9px] tracking-[0.1em] text-ink-4">
+                              RENEWAL
+                            </span>
+                          ) : null}
+                        </span>
 
                         <span
                           className={`tnum shrink-0 font-mono text-[10px] tracking-[0.08em] ${
                             late ? 'text-drain-ink' : 'text-ink-4'
                           }`}
                         >
-                          {late ? 'AFTER DUE' : dueLabel(chore.daysOverdue).toUpperCase()}
+                          {late ? 'AFTER DUE' : dueLabel(subject.daysOverdue).toUpperCase()}
                         </span>
                         <span className="tnum w-10 shrink-0 text-right font-mono text-[11px] text-ink-3">
-                          {minutesLabel(chore.effortMinutes)}
+                          {minutesLabel(subject.effortMinutes)}
                         </span>
 
                         <select
                           value={date}
-                          aria-label={`Move ${chore.name}`}
+                          aria-label={`Move ${subject.name}`}
                           onChange={(event) =>
                             change(
                               items.map((i) =>
-                                i.choreId === item.choreId ? { ...i, date: event.target.value } : i
+                                i.itemId === item.itemId ? { ...i, date: event.target.value } : i
                               )
                             )
                           }
@@ -289,9 +301,9 @@ export default function PlanClient({
 
                         <button
                           type="button"
-                          onClick={() => change(items.filter((i) => i.choreId !== item.choreId))}
+                          onClick={() => change(items.filter((i) => i.itemId !== item.itemId))}
                           className="shrink-0 px-1 font-mono text-[13px] leading-none text-ink-4 hover:text-drain-ink"
-                          aria-label={`Remove ${chore.name}`}
+                          aria-label={`Remove ${subject.name}`}
                         >
                           ×
                         </button>
@@ -321,17 +333,18 @@ export default function PlanClient({
                       onBlur={() => setAdding(null)}
                       onChange={(event) => {
                         if (event.target.value) {
-                          change([...items, { choreId: event.target.value, date }])
+                          change([...items, { itemId: event.target.value, date }])
                         }
                         setAdding(null)
                       }}
                       className="w-full border border-rule-strong bg-surface px-2 py-2 text-[13px] md:max-w-[420px]"
                     >
-                      <option value="">Pick a chore…</option>
+                      <option value="">Pick something…</option>
                       {addable.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} — {minutesLabel(c.effortMinutes)},{' '}
-                          {dueLabel(c.daysOverdue).toLowerCase()}
+                        <option key={c.ref} value={c.ref}>
+                          {c.name}
+                          {c.kind === 'renewal' ? ' (renewal)' : ''} —{' '}
+                          {minutesLabel(c.effortMinutes)}, {dueLabel(c.daysOverdue).toLowerCase()}
                         </option>
                       ))}
                     </select>
@@ -365,10 +378,17 @@ export default function PlanClient({
           <div className="mt-3 flex flex-col gap-2">
             {leftOut.map((chore) => (
               <div
-                key={chore.id}
+                key={chore.ref}
                 className="flex flex-wrap items-center gap-3 border border-rule-2 px-3 py-2"
               >
-                <span className="min-w-[140px] flex-1 text-[14px]">{chore.name}</span>
+                <span className="min-w-[140px] flex-1 text-[14px]">
+                  {chore.name}
+                  {chore.kind === 'renewal' ? (
+                    <span className="ml-2 font-mono text-[9px] tracking-[0.1em] text-ink-4">
+                      RENEWAL
+                    </span>
+                  ) : null}
+                </span>
                 <span className="tnum font-mono text-[10px] tracking-[0.1em] text-ink-3">
                   {dueLabel(chore.daysOverdue).toUpperCase()}
                 </span>
@@ -380,7 +400,7 @@ export default function PlanClient({
                   aria-label={`Plan ${chore.name}`}
                   onChange={(event) => {
                     if (event.target.value) {
-                      change([...items, { choreId: chore.id, date: event.target.value }])
+                      change([...items, { itemId: chore.ref, date: event.target.value }])
                     }
                   }}
                   className="border border-rule bg-surface px-2 py-1 font-mono text-[10px] text-ink-2"

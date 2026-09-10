@@ -1,4 +1,5 @@
-import { addMonths, shouldAlert, stageOf, URGENT_DAYS } from '../lib/renewals'
+import { addMonths, shouldAlert, stageOf, URGENT_DAYS, type Renewal } from '../lib/renewals'
+import { parseRef, plannableFrom, refFor, type Chore } from '../lib/rounds'
 
 /**
  * Exercises the pure half of renewals: month arithmetic that has to clamp
@@ -82,6 +83,53 @@ check(
     '2027-01-16'
   ) === true
 )
+
+console.log('\nwhat the planner may hold')
+
+function renewal(name: string, daysUntil: number, leadDays: number): Renewal {
+  return {
+    id: name, slug: name, name, category: null, dueOn: '2027-01-01',
+    periodMonths: 12, leadDays, effortMinutes: 30, notes: null,
+    daysUntil, stage: stageOf(daysUntil, leadDays), lastCompletedOn: null,
+  }
+}
+function chore(name: string): Chore {
+  return {
+    id: name, slug: name, name, area: null, intervalDays: 7, effortMinutes: 15,
+    preferWeekend: false, notes: null, lastDoneOn: null, dueOn: '2026-09-12',
+    daysOverdue: -2, state: 'soon',
+  }
+}
+
+const plannable = plannableFrom(
+  [chore('Bins')],
+  [renewal('Passport', 300, 180), renewal('Inspection', 10, 30), renewal('Licence', -4, 60)]
+)
+const names = plannable.map((p) => p.name)
+// The entire premise of a renewal is that it cannot be done early, so one
+// outside its window must not be offerable at all.
+check('a renewal beyond its lead time is not plannable', !names.includes('Passport'), names.join(', '))
+check('a renewal inside its lead time is plannable', names.includes('Inspection'))
+check('an expired renewal is plannable', names.includes('Licence'))
+check('chores are always plannable', names.includes('Bins'))
+check(
+  'a renewal carries days-overdue the way a chore does',
+  plannable.find((p) => p.name === 'Licence')?.daysOverdue === 4
+)
+check(
+  'no renewal prefers the weekend — these offices open on weekdays',
+  plannable.filter((p) => p.kind === 'renewal').every((p) => !p.preferWeekend)
+)
+
+console.log('\nplan refs')
+check('a chore ref round-trips', parseRef(refFor('chore', 'abc')).kind === 'chore')
+check('a renewal ref round-trips', parseRef(refFor('renewal', 'abc')).id === 'abc')
+// A uuid contains no colon, but splitting on only the first separator is what
+// keeps that from ever mattering.
+check('an id containing a colon survives', parseRef('renewal:a:b').id === 'a:b')
+let threw = false
+try { parseRef('nonsense') } catch { threw = true }
+check('anything else is refused', threw)
 
 console.log(failures === 0 ? '\nAll checks passed.\n' : `\n${failures} check(s) failed.\n`)
 process.exit(failures === 0 ? 0 : 1)

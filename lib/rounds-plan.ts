@@ -39,7 +39,12 @@ export function addDays(iso: string, days: number): string {
 }
 
 export type Candidate = {
-  choreId: string
+  /**
+   * Opaque to this module. The caller encodes what kind of thing this is —
+   * 'chore:<uuid>' or 'renewal:<uuid>' — because placing something needs only a
+   * size and a deadline, and nothing here is improved by knowing which it is.
+   */
+  itemId: string
   name: string
   effortMinutes: number
   /** When it comes round. May be in the past — that is what overdue means. */
@@ -48,7 +53,7 @@ export type Candidate = {
 }
 
 export type PlannedItem = {
-  choreId: string
+  itemId: string
   name: string
   effortMinutes: number
   dueOn: string
@@ -159,7 +164,7 @@ export function suggestWeek(input: SuggestInput): SuggestedWeek {
     }
 
     chosen.items.push({
-      choreId: chore.choreId,
+      itemId: chore.itemId,
       name: chore.name,
       effortMinutes: chore.effortMinutes,
       dueOn: chore.dueOn,

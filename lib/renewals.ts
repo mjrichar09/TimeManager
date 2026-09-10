@@ -32,6 +32,8 @@ export type Renewal = {
   dueOn: string
   periodMonths: number | null
   leadDays: number
+  /** What the weekly planner budgets against, once it enters its lead window. */
+  effortMinutes: number
   notes: string | null
   /** Positive = days remaining. Zero = due today. Negative = days expired. */
   daysUntil: number
@@ -50,6 +52,7 @@ export type RenewalInput = {
   dueOn: string
   periodMonths: number | null
   leadDays: number
+  effortMinutes: number
   notes: string | null
 }
 
@@ -99,13 +102,16 @@ function validate(input: RenewalInput): void {
   if (input.periodMonths !== null && (input.periodMonths < 1 || input.periodMonths > 240)) {
     throw new RoundsError('A cycle runs between 1 and 240 months')
   }
+  if (input.effortMinutes < 1 || input.effortMinutes > 600) {
+    throw new RoundsError('Budget between 1 and 600 minutes for it')
+  }
 }
 
 export async function getRenewals(today: string): Promise<Renewal[]> {
   const sql = getSql()
   const rows = (await sql`
     select r.id, r.slug, r.name, r.category, r.due_on::text as due_on,
-           r.period_months, r.lead_days, r.notes, r.sort_order,
+           r.period_months, r.lead_days, r.effort_minutes, r.notes, r.sort_order,
            last.completed_on::text as last_completed_on
     from renewals r
     left join lateral (
@@ -124,6 +130,7 @@ export async function getRenewals(today: string): Promise<Renewal[]> {
     due_on: string
     period_months: number | null
     lead_days: number
+    effort_minutes: number
     notes: string | null
     last_completed_on: string | null
   }>
@@ -141,6 +148,7 @@ export async function getRenewals(today: string): Promise<Renewal[]> {
       dueOn: r.due_on,
       periodMonths: r.period_months === null ? null : Number(r.period_months),
       leadDays,
+      effortMinutes: Number(r.effort_minutes),
       notes: r.notes,
       daysUntil,
       stage: stageOf(daysUntil, leadDays),
@@ -156,9 +164,10 @@ export async function createRenewal(input: RenewalInput): Promise<void> {
   const slug = slugify(input.name)
 
   const rows = (await sql`
-    insert into renewals (user_id, slug, name, category, due_on, period_months, lead_days, notes)
+    insert into renewals (user_id, slug, name, category, due_on, period_months, lead_days,
+                          effort_minutes, notes)
     values (${uid}, ${slug}, ${input.name.trim()}, ${input.category}, ${input.dueOn}::date,
-            ${input.periodMonths}, ${input.leadDays}, ${input.notes})
+            ${input.periodMonths}, ${input.leadDays}, ${input.effortMinutes}, ${input.notes})
     on conflict (user_id, slug) do nothing
     returning id
   `) as Array<{ id: string }>
@@ -176,6 +185,7 @@ export async function updateRenewal(id: string, input: RenewalInput): Promise<vo
       due_on = ${input.dueOn}::date,
       period_months = ${input.periodMonths},
       lead_days = ${input.leadDays},
+      effort_minutes = ${input.effortMinutes},
       notes = ${input.notes}
     where id = ${id} and user_id = ${userId()}
     returning id
@@ -245,6 +255,13 @@ export async function completeRenewal(
       set due_on = ${nextDue}::date, alert_due_on = null, alert_stage = null, alerted_on = null
       where id = ${id} and user_id = ${uid}
     `,
+    // Close any nearby planned row, the same way completeChore does — renewing
+    // early should clear it off the week, not leave it sitting on Tuesday.
+    sql`
+      update chore_plan set status = 'done'
+      where user_id = ${uid} and renewal_id = ${id} and status = 'planned'
+        and planned_on between ${completedOn}::date - 7 and ${completedOn}::date + 7
+    `,
   ])
 }
 
@@ -268,6 +285,11 @@ export async function undoRenewal(id: string): Promise<void> {
       set due_on = ${rows[0].previous_due_on}::date,
           alert_due_on = null, alert_stage = null, alerted_on = null
       where id = ${id} and user_id = ${uid}
+    `,
+    sql`
+      update chore_plan set status = 'planned'
+      where user_id = ${uid} and renewal_id = ${id} and status = 'done'
+        and planned_on >= current_date - 14
     `,
   ])
 }

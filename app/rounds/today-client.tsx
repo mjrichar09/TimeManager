@@ -50,7 +50,9 @@ export default function TodayClient({ initial }: { initial: RoundsView }) {
   const done = todayPlan.filter((p) => p.status === 'done')
 
   const plannedIds = new Set(
-    view.plan.filter((p) => p.status === 'planned').map((p) => p.choreId)
+    view.plan
+      .filter((p) => p.status === 'planned' && p.kind === 'chore')
+      .map((p) => p.itemId)
   )
 
   // Overdue and nobody has decided when it will happen. This is the list the app
@@ -101,25 +103,44 @@ export default function TodayClient({ initial }: { initial: RoundsView }) {
 
         <div className="mt-3 flex flex-col gap-2">
           {todo.map((entry) => {
-            const chore = byId.get(entry.choreId)
+            const chore = entry.kind === 'chore' ? byId.get(entry.itemId) : undefined
             return (
               <div
                 key={entry.id}
                 className="flex flex-wrap items-center gap-3 border border-rule-2 px-3 py-3"
               >
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() =>
-                    dispatch(() => completeChoreAction(entry.choreId, view.today, view.weekStart))
-                  }
-                  className="h-7 w-7 shrink-0 border border-rule-strong bg-surface text-[13px] leading-none text-ink-3 hover:bg-surface-2 disabled:opacity-40"
-                  aria-label={`Mark ${entry.name} done`}
-                >
-                  ✓
-                </button>
+                {/* A renewal cannot be ticked off here. Completing one needs the
+                    new expiry date off the paperwork, and a one-tap ✓ that
+                    invented that date would be the one bug that matters — so it
+                    sends you to the screen that asks. */}
+                {entry.kind === 'renewal' ? (
+                  <Link
+                    href="/rounds/renewals"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center border border-rule-strong bg-surface text-[13px] leading-none text-ink-3 hover:bg-surface-2"
+                    aria-label={`Open ${entry.name} to renew it`}
+                  >
+                    →
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() =>
+                      dispatch(() => completeChoreAction(entry.itemId, view.today, view.weekStart))
+                    }
+                    className="h-7 w-7 shrink-0 border border-rule-strong bg-surface text-[13px] leading-none text-ink-3 hover:bg-surface-2 disabled:opacity-40"
+                    aria-label={`Mark ${entry.name} done`}
+                  >
+                    ✓
+                  </button>
+                )}
 
                 <span className="min-w-[140px] flex-1 text-[15px]">{entry.name}</span>
+                {entry.kind === 'renewal' ? (
+                  <span className="shrink-0 border border-rule px-1.5 py-0.5 font-mono text-[9px] tracking-[0.1em] text-ink-3">
+                    RENEWAL
+                  </span>
+                ) : null}
                 {chore ? <StateChip chore={chore} /> : null}
                 <span className="tnum w-10 shrink-0 text-right font-mono text-[11px] text-ink-3">
                   {minutesLabel(entry.effortMinutes)}
@@ -145,16 +166,25 @@ export default function TodayClient({ initial }: { initial: RoundsView }) {
               {done.map((entry) => (
                 <div key={entry.id} className="flex items-center gap-3 px-3 py-1.5">
                   <span className="text-[13px] text-ink-4 line-through">{entry.name}</span>
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() =>
-                      dispatch(() => undoCompletionAction(entry.choreId, view.weekStart))
-                    }
-                    className="font-mono text-[10px] tracking-[0.1em] text-ink-4 hover:text-ink-2 disabled:opacity-40"
-                  >
-                    UNDO
-                  </button>
+                  {entry.kind === 'chore' ? (
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() =>
+                        dispatch(() => undoCompletionAction(entry.itemId, view.weekStart))
+                      }
+                      className="font-mono text-[10px] tracking-[0.1em] text-ink-4 hover:text-ink-2 disabled:opacity-40"
+                    >
+                      UNDO
+                    </button>
+                  ) : (
+                    <Link
+                      href="/rounds/renewals"
+                      className="font-mono text-[10px] tracking-[0.1em] text-ink-4 hover:text-ink-2"
+                    >
+                      UNDO
+                    </Link>
+                  )}
                 </div>
               ))}
             </div>

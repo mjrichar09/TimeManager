@@ -130,7 +130,7 @@ export async function suggestWeekAction(weekStart: string): Promise<SuggestResul
  */
 export async function saveWeekPlanAction(
   weekStart: string,
-  items: Array<{ choreId: string; date: string }>
+  items: Array<{ itemId: string; date: string }>
 ): Promise<RoundsResult> {
   return run(weekStart, () => saveWeekPlan(weekStart, items))
 }

@@ -1,4 +1,5 @@
 import { getSql, userId } from './db'
+import { getRenewals, type Renewal } from './renewals'
 import {
   addDays,
   dayNumber,
@@ -35,15 +36,66 @@ export type Chore = {
   state: ChoreState
 }
 
+export type PlanKind = 'chore' | 'renewal'
+
+/**
+ * What a plan row points at.
+ *
+ * `ref` is the planner's identity for a thing — 'chore:<uuid>' or
+ * 'renewal:<uuid>'. The board, the suggester and the save action all speak refs
+ * and never need to branch; only the two functions at the database boundary,
+ * `getPlan` and `saveWeekPlan`, know how one is spelled.
+ */
+export function refFor(kind: PlanKind, id: string): string {
+  return `${kind}:${id}`
+}
+
+export function parseRef(ref: string): { kind: PlanKind; id: string } {
+  // Split on the FIRST colon only. JavaScript's split(':', 2) truncates rather
+  // than keeping the remainder, which would quietly hand back half an id — the
+  // kind of bug that hides until an id format changes.
+  const cut = ref.indexOf(':')
+  const kind = cut === -1 ? '' : ref.slice(0, cut)
+  const id = cut === -1 ? '' : ref.slice(cut + 1)
+  if ((kind !== 'chore' && kind !== 'renewal') || !id) {
+    throw new RoundsError('That is not something the plan can hold')
+  }
+  return { kind, id }
+}
+
 export type PlanEntry = {
   id: string
-  choreId: string
+  ref: string
+  kind: PlanKind
+  /** The raw row id, for the completion path, which does differ by kind. */
+  itemId: string
   name: string
   effortMinutes: number
   dueOn: string
   plannedOn: string
   status: 'planned' | 'done' | 'skipped'
   source: string
+}
+
+/**
+ * Anything the planner is allowed to put on the board this week.
+ *
+ * Chores are always here — a free Saturday is the right moment to get ahead of
+ * the hedges. Renewals are here ONLY inside their lead window, because "you
+ * can't do this early" is the entire reason they are a separate thing; offering
+ * a passport in the picker eleven months out would be offering a task that
+ * cannot be done.
+ */
+export type Plannable = {
+  ref: string
+  kind: PlanKind
+  id: string
+  name: string
+  effortMinutes: number
+  dueOn: string
+  preferWeekend: boolean
+  /** Positive = late by this many days, matching Chore.daysOverdue. */
+  daysOverdue: number
 }
 
 export type Settings = {
@@ -55,6 +107,9 @@ export type Settings = {
 export type RoundsView = {
   today: string
   chores: Chore[]
+  renewals: Renewal[]
+  /** Chores, plus renewals inside their lead window. What the board may hold. */
+  plannable: Plannable[]
   settings: Settings
   /** Monday of the week currently being shown. */
   weekStart: string
@@ -175,18 +230,28 @@ export async function getChores(today: string): Promise<Chore[]> {
 
 export async function getPlan(from: string, to: string): Promise<PlanEntry[]> {
   const sql = getSql()
+  // Left joins, not the inner join this used to be: a row now names a chore or
+  // a renewal, and an inner join on either one silently drops the other kind.
   const rows = (await sql`
-    select p.id, p.chore_id, c.name, c.effort_minutes, p.planned_on::text as planned_on,
-           p.status, p.source, s.due_on::text as due_on
+    select p.id, p.chore_id, p.renewal_id, p.planned_on::text as planned_on,
+           p.status, p.source,
+           coalesce(c.name, r.name) as name,
+           coalesce(c.effort_minutes, r.effort_minutes) as effort_minutes,
+           coalesce(s.due_on, r.due_on)::text as due_on
     from chore_plan p
-    join chores c on c.id = p.chore_id
-    join chore_status s on s.id = p.chore_id
+    left join chores c on c.id = p.chore_id
+    left join chore_status s on s.id = p.chore_id
+    left join renewals r on r.id = p.renewal_id
     where p.user_id = ${userId()}
       and p.planned_on between ${from}::date and ${to}::date
-    order by p.planned_on, c.name
+      -- A subject that has been hard-deleted leaves a row pointing at nothing.
+      -- Skip it rather than rendering a nameless slot.
+      and coalesce(c.name, r.name) is not null
+    order by p.planned_on, coalesce(c.name, r.name)
   `) as Array<{
     id: string
-    chore_id: string
+    chore_id: string | null
+    renewal_id: string | null
     name: string
     effort_minutes: number
     planned_on: string
@@ -195,16 +260,57 @@ export async function getPlan(from: string, to: string): Promise<PlanEntry[]> {
     due_on: string
   }>
 
-  return rows.map((r) => ({
-    id: r.id,
-    choreId: r.chore_id,
-    name: r.name,
-    effortMinutes: Number(r.effort_minutes),
-    dueOn: r.due_on,
-    plannedOn: r.planned_on,
-    status: r.status,
-    source: r.source,
-  }))
+  return rows.map((r) => {
+    const kind: PlanKind = r.renewal_id ? 'renewal' : 'chore'
+    const itemId = (r.renewal_id ?? r.chore_id) as string
+    return {
+      id: r.id,
+      ref: refFor(kind, itemId),
+      kind,
+      itemId,
+      name: r.name,
+      effortMinutes: Number(r.effort_minutes),
+      dueOn: r.due_on,
+      plannedOn: r.planned_on,
+      status: r.status,
+      source: r.source,
+    }
+  })
+}
+
+/**
+ * Everything the board may hold this week: every chore, plus the renewals that
+ * have entered their lead window. See the Plannable doc comment for why the
+ * renewal filter is not a convenience.
+ */
+export function plannableFrom(chores: Chore[], renewals: Renewal[]): Plannable[] {
+  return [
+    ...chores.map((c) => ({
+      ref: refFor('chore', c.id),
+      kind: 'chore' as const,
+      id: c.id,
+      name: c.name,
+      effortMinutes: c.effortMinutes,
+      dueOn: c.dueOn,
+      preferWeekend: c.preferWeekend,
+      daysOverdue: c.daysOverdue,
+    })),
+    ...renewals
+      .filter((r) => r.stage !== 'later')
+      .map((r) => ({
+        ref: refFor('renewal', r.id),
+        kind: 'renewal' as const,
+        id: r.id,
+        name: r.name,
+        effortMinutes: r.effortMinutes,
+        dueOn: r.dueOn,
+        // A renewal has no weekend preference: the offices that issue these are
+        // open on weekdays, which is the opposite of a lawn.
+        preferWeekend: false,
+        // daysUntil counts forward, daysOverdue counts back. Same number.
+        daysOverdue: -r.daysUntil,
+      })),
+  ]
 }
 
 export async function getRoundsView(weekStartOverride?: string): Promise<RoundsView> {
@@ -213,8 +319,9 @@ export async function getRoundsView(weekStartOverride?: string): Promise<RoundsV
   const today = todayIn(settings.timezone)
   const start = weekStartOverride ?? weekStart(today)
 
-  const [chores, plan, devices] = await Promise.all([
+  const [chores, renewals, plan, devices] = await Promise.all([
     getChores(today),
+    getRenewals(today),
     getPlan(start, addDays(start, 6)),
     sql`select count(*)::int as n from push_subscriptions
         where user_id = ${userId()} and expired_at is null`,
@@ -224,6 +331,8 @@ export async function getRoundsView(weekStartOverride?: string): Promise<RoundsV
   return {
     today,
     chores,
+    renewals,
+    plannable: plannableFrom(chores, renewals),
     settings,
     weekStart: start,
     plan,
@@ -242,21 +351,21 @@ export async function getRoundsView(weekStartOverride?: string): Promise<RoundsV
 export async function suggestForWeek(start: string): Promise<SuggestedWeek> {
   const settings = await getSettings()
   const today = todayIn(settings.timezone)
-  const chores = await getChores(today)
+  const [chores, renewals] = await Promise.all([getChores(today), getRenewals(today)])
   const existing = await getPlan(start, addDays(start, 6))
 
   const alreadyPlanned = new Set(
-    existing.filter((p) => p.status !== 'skipped').map((p) => p.choreId)
+    existing.filter((p) => p.status !== 'skipped').map((p) => p.ref)
   )
 
-  const candidates: Candidate[] = chores
-    .filter((c) => !alreadyPlanned.has(c.id))
-    .map((c) => ({
-      choreId: c.id,
-      name: c.name,
-      effortMinutes: c.effortMinutes,
-      dueOn: c.dueOn,
-      preferWeekend: c.preferWeekend,
+  const candidates: Candidate[] = plannableFrom(chores, renewals)
+    .filter((item) => !alreadyPlanned.has(item.ref))
+    .map((item) => ({
+      itemId: item.ref,
+      name: item.name,
+      effortMinutes: item.effortMinutes,
+      dueOn: item.dueOn,
+      preferWeekend: item.preferWeekend,
     }))
 
   const suggestion = suggestWeek({
@@ -273,7 +382,7 @@ export async function suggestForWeek(start: string): Promise<SuggestedWeek> {
     const day = suggestion.days.find((d) => d.date === entry.plannedOn)
     if (!day) continue
     day.items.push({
-      choreId: entry.choreId,
+      itemId: entry.ref,
       name: entry.name,
       effortMinutes: entry.effortMinutes,
       dueOn: entry.dueOn,
@@ -303,7 +412,7 @@ export async function suggestForWeek(start: string): Promise<SuggestedWeek> {
  */
 export async function saveWeekPlan(
   start: string,
-  items: Array<{ choreId: string; date: string }>
+  items: Array<{ itemId: string; date: string }>
 ): Promise<void> {
   const sql = getSql()
   const uid = userId()
@@ -322,12 +431,25 @@ export async function saveWeekPlan(
   `
 
   for (const item of items) {
-    await sql`
-      insert into chore_plan (user_id, chore_id, planned_on, source)
-      values (${uid}, ${item.choreId}, ${item.date}::date, 'manual')
-      on conflict (user_id, chore_id, planned_on)
-        do update set status = 'planned', source = 'manual'
-    `
+    const { kind, id } = parseRef(item.itemId)
+    // Two statements rather than one with nulls: the conflict target differs.
+    // Chore rows dedupe on chore_plan_unique, renewal rows on
+    // chore_plan_renewal_unique, and one insert cannot name both.
+    if (kind === 'chore') {
+      await sql`
+        insert into chore_plan (user_id, chore_id, planned_on, source)
+        values (${uid}, ${id}, ${item.date}::date, 'manual')
+        on conflict (user_id, chore_id, planned_on)
+          do update set status = 'planned', source = 'manual'
+      `
+    } else {
+      await sql`
+        insert into chore_plan (user_id, renewal_id, planned_on, source)
+        values (${uid}, ${id}, ${item.date}::date, 'manual')
+        on conflict (user_id, renewal_id, planned_on) where renewal_id is not null
+          do update set status = 'planned', source = 'manual'
+      `
+    }
   }
 }
 
