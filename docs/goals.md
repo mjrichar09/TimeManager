@@ -1,11 +1,11 @@
 # Goals — working record
 
-Started 2026-08-24. Updated 2026-09-09. **Not yet entered in the app.**
-Stopped at step 7 of 7.
+Started 2026-08-24. Updated 2026-09-10. **Goals live here, not in the app.**
+Step 7 was cut — see "Goals and hours stay separate" below.
 
-To resume: read this file, then do step 7 — map categories to goals and enter
-all five in the app. Do it before the week-4 report lands (~2026-09-20), or the
-allocation report has no goals to allocate against.
+To resume: the goals are settled and ranked. Open items are B's first
+conversation, D's doctor thread, and deciding what the week-4 allocation report
+is *about* now that it isn't about goals.
 
 ---
 
@@ -52,7 +52,7 @@ The build plan never cites anyone, but its vocabulary maps onto:
 4. Forced rank ✅
 5. Lead measures — 4 of 5 done
 6. Name the displacement ✅
-7. **Map categories → goals, enter in the app ← we are here**
+7. ~~Map categories → goals, enter in the app~~ — **cut 2026-09-10**
 
 ---
 
@@ -159,6 +159,60 @@ with it.
 dogfooding on his own shortlist, and open houses are populated by people with
 exactly the user's problem. The house-purchase goal and AllSquare stopped
 competing — same hours serve both.
+
+---
+
+## Goals and hours stay separate — decided 2026-09-10
+
+Step 7 was going to map each category to a default goal, so blocks would inherit
+a goal and the allocation report could rank goals by hours. Cut, on his call.
+
+**The reason is not that the categories don't line up.** They don't — walking the
+mapping produced two defensible pairs out of eighteen, because reduction goals
+invert the measurement (C succeeds when chore hours *fall*, so mapping chores to
+C reports a drowning week as progress) and because Household chores carries both
+routine maintenance and E's Saturday reorganisation, which have opposite signs.
+But that is an argument for mapping harder.
+
+**The real reason is that hours are not progress.** B succeeds in a thirty-minute
+conversation. A succeeds when someone subscribes. Neither is a quantity of time,
+so a report ranking them by hours would be confidently wrong rather than merely
+empty — worse than no report. The two things get reviewed side by side by a
+human instead, which is the only place the judgement can live.
+
+### What the hours *can* test
+
+The displacements. "Did Media / scroll fall" is a category-level question about
+quantity, which is exactly what the log measures. So the allocation report keeps
+its accountability and changes its subject: not hours per goal, but **did the
+hours I said I would cut actually fall.**
+
+### Consequences still open
+
+- **`design/Allocation.dc.html` needs a new subject** before M4 is built. The
+  DRIP quadrant and run chart are untouched — they run on category, energy and
+  daily_check, and never needed goals.
+- **The goals screen degrades under this.** With no mappings every sparkline is
+  flat, every goal reads 0.0h in drain red, and each row says "no categories
+  mapped" — a screen that reports failure by construction. Either don't enter
+  the goals there, or strip the mapping panel and the sparklines so it is a
+  ranked list read *beside* the week's hours. The latter is closer to
+  `design/WeeklyReview.dc.html` than to the goals page as built.
+- **The Goals nav tab** was added 2026-09-10 to make step 7 reachable. Step 7 is
+  gone; the tab is up for removal.
+
+---
+
+## The baseline is not a clean "before"
+
+Noted 2026-09-10: the capture habit is already affecting behaviour — he reports
+it has been good for motivation. So the four weeks are not an untreated control
+period; measurement is itself the first intervention.
+
+This does not spoil anything, and holding still for four weeks was right either
+way. It means the honest reading of week 4 is "me, already slightly nudged by
+watching myself", not "my untouched baseline". Write it down now rather than
+reconstructing it in December.
 
 ---
 
