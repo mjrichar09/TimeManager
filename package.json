@@ -12,7 +12,8 @@
     "db:seed-rounds": "tsx scripts/seed-rounds.ts",
     "db:setup": "npm run db:migrate && npm run db:seed && npm run db:seed-rounds",
     "icons": "tsx scripts/icons.ts && tsx scripts/rounds-icons.ts",
-    "test:plan": "tsx scripts/test-rounds-plan.ts"
+    "test:plan": "tsx scripts/test-rounds-plan.ts",
+    "test:renewals": "tsx scripts/test-renewals.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

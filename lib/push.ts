@@ -1,5 +1,6 @@
 import webpush, { type PushSubscription } from 'web-push'
 import { getSql, userId } from './db'
+import { dueAlerts, type RenewalAlert } from './renewals'
 import { getChores, getPlan, getSettings, todayIn } from './rounds'
 
 /**
@@ -153,5 +154,64 @@ export async function composeDailyDigest(): Promise<Notification | null> {
         : `${count} chore${count === 1 ? '' : 's'} come due today. Plan the week?`,
     url: '/rounds/plan',
     tag: `rounds-unplanned-${today}`,
+  }
+}
+
+/**
+ * The renewal warnings worth sending this morning.
+ *
+ * Deliberately a SEPARATE notification from the daily digest rather than an
+ * extra line on it. "Passport expires in 90 days" and "bins, 10 min" want
+ * different reactions, and the digest's job is to be a list you work through
+ * without deciding anything — which is exactly what a renewal is not.
+ *
+ * Returns the notification and the ids it covers, so the caller can record that
+ * they were announced only once the push has actually landed.
+ */
+export async function composeRenewalAlert(): Promise<{
+  notification: Notification
+  alerts: RenewalAlert[]
+} | null> {
+  const settings = await getSettings()
+  const today = todayIn(settings.timezone)
+  const alerts = await dueAlerts(today)
+  if (alerts.length === 0) return null
+
+  // Worst first: expired before merely soon, and nearest before furthest.
+  const sorted = [...alerts].sort((a, b) => a.daysUntil - b.daysUntil)
+  const worst = sorted[0]
+
+  const when = (days: number) => {
+    if (days < 0) return `expired ${-days} day${days === -1 ? '' : 's'} ago`
+    if (days === 0) return 'expires today'
+    if (days === 1) return 'expires tomorrow'
+    if (days < 60) return `expires in ${days} days`
+    return `expires in ${Math.round(days / 30.44)} months`
+  }
+
+  const title =
+    sorted.length === 1
+      ? worst.daysUntil < 0
+        ? `${worst.name} has expired`
+        : `${worst.name} — ${when(worst.daysUntil)}`
+      : `${sorted.length} renewals need attention`
+
+  const body =
+    sorted.length === 1
+      ? worst.daysUntil < 0
+        ? 'Renew it, then set the new date.'
+        : "You can't do this one early, but you can do it now."
+      : sorted.map((a) => `${a.name} ${when(a.daysUntil)}`).join(' · ')
+
+  return {
+    notification: {
+      title,
+      body,
+      url: '/rounds/renewals',
+      // Its own tag, so a renewal warning never collapses the morning list or
+      // gets collapsed by it.
+      tag: `rounds-renewals-${today}`,
+    },
+    alerts: sorted,
   }
 }

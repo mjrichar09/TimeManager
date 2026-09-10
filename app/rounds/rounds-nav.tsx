@@ -7,6 +7,7 @@ const TABS = [
   { href: '/rounds', label: 'Today' },
   { href: '/rounds/plan', label: 'Plan' },
   { href: '/rounds/chores', label: 'Chores' },
+  { href: '/rounds/renewals', label: 'Renewals' },
   { href: '/rounds/settings', label: 'Settings' },
 ]
 

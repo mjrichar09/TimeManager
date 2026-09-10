@@ -38,6 +38,7 @@ is nothing left to decide at 8am, which is the whole exercise.
 | `/rounds` | Today's list. Tap a row to mark it done. Overdue-and-unplanned shows separately, because that list is the one worth keeping short. |
 | `/rounds/plan` | The week. Opens on a suggestion; nothing is written until you press save. `?week=YYYY-MM-DD` shows any other week. |
 | `/rounds/chores` | The list itself — intervals, effort estimates, areas. |
+| `/rounds/renewals` | Dated obligations that can't be done early — inspection, registration, insurance, Global Entry, passport, licence. Warns a configurable number of days ahead. |
 | `/rounds/settings` | Day capacity, notification hour, and push subscriptions. |
 
 ## How the suggester decides
@@ -61,14 +62,73 @@ Day capacity is the number that makes or breaks this. Be pessimistic — a Tuesd
 that claims an hour and gets twenty minutes produces a plan you abandon by
 Wednesday.
 
+## Renewals
+
+A chore and a renewal look alike and behave oppositely, which is why they are
+separate tables rather than a flag.
+
+**A chore's due date is derived; a renewal's is imposed.** `chore_status`
+computes last completion plus the interval, so doing a chore early shifts
+everything after it. A renewal's date is printed on a document by someone else,
+and renewing early does not move it — renew a registration three months early
+and the new expiry is still the old expiry plus a year. So `renewals.due_on` is
+stored, and `completeRenewal` anchors the next cycle on the **old due date**,
+never on the day you acted. Getting that backwards would walk every renewal
+earlier by however long you were organised, compounding each cycle.
+
+`period_months` rather than days, because these are all whole-month cycles and
+`addMonths` clamps to the end of the month — 31 January plus a month is 28
+February, not 3 March. Ten years of rollover drift on a passport is real.
+
+There is no status view. `chore_status` exists because due-ness is a computation
+the app, the cron and any script have to agree on; here it is a column.
+
+### Alerts
+
+Each renewal carries its own `lead_days` — a month is right for an inspection
+and nowhere near enough for a passport. From that, four stages:
+
+| Stage | When | Says |
+|---|---|---|
+| `later` | beyond the lead time | nothing |
+| `lead` | inside the lead time | "coming up" |
+| `urgent` | a week or less | "soon" |
+| `overdue` | past the date | "expired" |
+
+**A renewal speaks on entering a stage, not while sitting in one.** A passport
+with a 180-day lead would otherwise say the same thing every morning for six
+months and be muted inside a week. `alert_due_on`, `alert_stage` and
+`alerted_on` on the row are that bookkeeping, scoped to the due date so renewing
+re-arms them by construction. The one exception is `overdue`, which repeats
+weekly — an expired licence is news again.
+
+The pure half — staging, month arithmetic, and the decision to speak — is in
+`lib/renewals.ts` and covered by `npx tsx scripts/test-renewals.ts`.
+
+### Two sends, not one
+
+The cron sends renewal warnings as a **separate** push from the chore digest,
+before it. "Passport expires in 90 days" and "bins, 10 min" want different
+reactions, and the digest exists to be a list you work through without deciding
+anything — which a renewal is not. They carry different tags so neither
+collapses the other.
+
+They are also guarded independently: `last_digest_on` gates only the chore
+digest, so a day whose digest has already gone out can still tell you something
+expired. `{"skipped":"already_sent_today"}` now reports what the renewals half
+did alongside it.
+
 ## Setup
 
 ### 1. Database
 
 ```bash
-npm run db:migrate       # applies db/migrations/0006_rounds.sql
+npm run db:migrate       # applies db/migrations/0006_rounds.sql and 0010_renewals.sql
 npm run db:seed-rounds   # 21 starter chores, first due dates staggered
 ```
+
+Renewals ship no seed — the dates are personal and there is nothing sensible to
+guess. Add them from the screen; the empty state lists the usual suspects.
 
 The seed is idempotent and skips anything already there.
 

@@ -71,3 +71,20 @@ export function longDate(iso: string): string {
     timeZone: 'UTC',
   })
 }
+
+/**
+ * Like longDate, but carrying the year.
+ *
+ * Chores come round inside a fortnight, so a weekday and a date is enough to
+ * place them. Renewals run to five and ten years, where "Wednesday 18 April"
+ * is not a date at all.
+ */
+export function longDateWithYear(iso: string): string {
+  return new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+}
