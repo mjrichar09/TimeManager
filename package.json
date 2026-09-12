@@ -10,7 +10,8 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
     "db:seed-rounds": "tsx scripts/seed-rounds.ts",
-    "db:setup": "npm run db:migrate && npm run db:seed && npm run db:seed-rounds",
+    "db:seed-goals": "tsx scripts/seed-goals.ts",
+    "db:setup": "npm run db:migrate && npm run db:seed && npm run db:seed-rounds && npm run db:seed-goals",
     "icons": "tsx scripts/icons.ts && tsx scripts/rounds-icons.ts",
     "test:plan": "tsx scripts/test-rounds-plan.ts",
     "test:renewals": "tsx scripts/test-renewals.ts"

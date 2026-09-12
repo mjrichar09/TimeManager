@@ -1,7 +1,9 @@
 # Goals — working record
 
-Started 2026-08-24. Updated 2026-09-10. **Goals live here, not in the app.**
-Step 7 was cut — see "Goals and hours stay separate" below.
+Started 2026-08-24. Updated 2026-09-12. **This is still the record.** The five
+goals and their ranks now also live in the app (`npm run db:seed-goals`), as a
+ranked list — no category mapping, because step 7 was cut. See "Goals and hours
+stay separate" below.
 
 To resume: the goals are settled and ranked. Open items are B's first
 conversation, D's doctor thread, and deciding what the week-4 allocation report
@@ -52,7 +54,8 @@ The build plan never cites anyone, but its vocabulary maps onto:
 4. Forced rank ✅
 5. Lead measures — 4 of 5 done
 6. Name the displacement ✅
-7. ~~Map categories → goals, enter in the app~~ — **cut 2026-09-10**
+7. ~~Map categories → goals~~ — **cut 2026-09-10**. The other half, entering
+   the goals in the app, was done 2026-09-12 as a ranked list only.
 
 ---
 
@@ -198,8 +201,11 @@ hours I said I would cut actually fall.**
   the goals there, or strip the mapping panel and the sparklines so it is a
   ranked list read *beside* the week's hours. The latter is closer to
   `design/WeeklyReview.dc.html` than to the goals page as built.
+  **2026-09-12: the goals were entered anyway**, so the second half of that
+  choice is now owed — the page as built reports 0.0h in drain red against every
+  goal, which is the failure-by-construction described above, not a finding.
 - **The Goals nav tab** was added 2026-09-10 to make step 7 reachable. Step 7 is
-  gone; the tab is up for removal.
+  gone, but the tab now has the ranked list behind it, so it stays.
 
 ---
 
