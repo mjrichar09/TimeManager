@@ -14,7 +14,10 @@
     "db:setup": "npm run db:migrate && npm run db:seed && npm run db:seed-rounds && npm run db:seed-goals",
     "icons": "tsx scripts/icons.ts && tsx scripts/rounds-icons.ts",
     "test:plan": "tsx scripts/test-rounds-plan.ts",
-    "test:renewals": "tsx scripts/test-renewals.ts"
+    "test:renewals": "tsx scripts/test-renewals.ts",
+    "test:edges": "tsx scripts/test-edges.ts",
+    "db:repair-overlaps": "tsx scripts/repair-overlaps.ts",
+    "db:merge-taps": "tsx scripts/merge-duplicate-taps.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

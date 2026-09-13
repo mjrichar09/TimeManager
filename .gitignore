@@ -45,3 +45,6 @@ next-env.d.ts
 
 # Generated design canvas — 2.3MB, rebuilt from design/*.dc.html by the design skill
 design/tally-screens.html
+
+# repair backups: the previous state of any row a repair script rewrote
+/db/repairs/

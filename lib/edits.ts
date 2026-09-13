@@ -48,9 +48,21 @@ export async function recategorize(blockId: string, slug: string): Promise<void>
 /**
  * Move one edge of a block by a number of minutes.
  *
- * If the neighbour on that side is touching, it moves with it — dragging the
- * boundary between two blocks, not carving a hole between them. If there's a gap
- * on that side, the edge moves into the gap and stops at the neighbour.
+ * The edge and its neighbour move together: growing this block shrinks the one
+ * it runs into, shrinking it lets a touching neighbour grow back. Two things
+ * never happen — a block never overlaps its neighbour, and a neighbour is never
+ * consumed entirely. Where there is a genuine gap on that side, the edge moves
+ * into the gap first and the neighbour only starts moving once the edge reaches
+ * it.
+ *
+ * The neighbour is found by ORDER, not by adjacency: the nearest block on that
+ * side by `started_at`, whatever its end does. The earlier version looked for
+ * "the block that ends before this one starts", which is the same thing only as
+ * long as nothing overlaps — and the moment one overlap exists anywhere in the
+ * log, the real neighbour stops matching that predicate, becomes invisible, and
+ * the edge slides straight through it. That is how one overlap became many.
+ * Finding the neighbour by order means an edit walks into an existing overlap
+ * and tidies it up instead of deepening it.
  */
 export async function moveEdge(
   blockId: string,
@@ -70,6 +82,7 @@ export async function moveEdge(
   const start = new Date(block.started_at).getTime()
   const end = block.ended_at ? new Date(block.ended_at).getTime() : null
   const delta = deltaMinutes * 60_000
+  const min = MIN_BLOCK_MINUTES * 60_000
 
   if (edge === 'end' && end === null) {
     throw new EditError('The running block ends at now — switch or split it instead')
@@ -77,26 +90,41 @@ export async function moveEdge(
 
   if (edge === 'start') {
     const target = start + delta
-    const upperBound = (end ?? Date.now()) - MIN_BLOCK_MINUTES * 60_000
-    if (target > upperBound) throw new EditError('That would leave nothing of this block')
+    if (target > (end ?? Date.now()) - min) {
+      throw new EditError('That would leave nothing of this block')
+    }
 
     const prevRows = (await sql`
       select id, started_at, ended_at from blocks
-      where user_id = ${uid} and ended_at is not null and ended_at <= ${block.started_at}::timestamptz
-      order by ended_at desc limit 1
-    `) as Array<{ id: string; started_at: string; ended_at: string }>
+      where user_id = ${uid} and id <> ${blockId}
+        and started_at < ${block.started_at}::timestamptz
+      order by started_at desc limit 1
+    `) as Array<{ id: string; started_at: string; ended_at: string | null }>
 
     const prev = prevRows[0]
     if (prev) {
       const prevStart = new Date(prev.started_at).getTime()
-      const prevEnd = new Date(prev.ended_at).getTime()
-      const touching = prevEnd === start
-      const lowerBound = touching
-        ? prevStart + MIN_BLOCK_MINUTES * 60_000 // don't consume the neighbour
-        : prevEnd // stop at the neighbour, leaving the gap
-      if (target < lowerBound) throw new EditError('That would run into the previous block')
+      const prevEnd = prev.ended_at ? new Date(prev.ended_at).getTime() : null
 
-      if (touching) {
+      // The block before this one has no end yet. Closing it here would be a
+      // bigger edit than the button promises, so only the direction that
+      // untangles them is allowed.
+      if (prevEnd === null) {
+        if (target < start) {
+          throw new EditError('The block before this one is still running — stop it first')
+        }
+      } else if (target < prevEnd || prevEnd >= start) {
+        // Either the edge has reached into the neighbour, or the two were
+        // already touching (or overlapping) and it should follow this edge.
+        if (target < prevStart + min) {
+          throw new EditError('That would leave nothing of the block before it')
+        }
+        if (prevEnd > (end ?? Date.now())) {
+          // It doesn't just touch this block, it swallows it. Trimming its end
+          // to this edge would silently discard everything past this block.
+          throw new EditError('The block before this one runs right past it — fix that overlap first')
+        }
+
         const iso = new Date(target).toISOString()
         await sql.transaction([
           sql`update blocks set ended_at = ${iso}::timestamptz where id = ${prev.id} and user_id = ${uid}`,
@@ -115,24 +143,32 @@ export async function moveEdge(
 
   // edge === 'end'
   const target = (end as number) + delta
-  const lowerBound = start + MIN_BLOCK_MINUTES * 60_000
-  if (target < lowerBound) throw new EditError('That would leave nothing of this block')
+  if (target < start + min) throw new EditError('That would leave nothing of this block')
 
   const nextRows = (await sql`
     select id, started_at, ended_at from blocks
-    where user_id = ${uid} and started_at >= ${block.ended_at}::timestamptz and id <> ${blockId}
+    where user_id = ${uid} and id <> ${blockId}
+      and started_at > ${block.started_at}::timestamptz
     order by started_at asc limit 1
   `) as Array<{ id: string; started_at: string; ended_at: string | null }>
 
   const next = nextRows[0]
   if (next) {
     const nextStart = new Date(next.started_at).getTime()
+    // An open neighbour runs to now, and pushing its start later is the normal
+    // way a reconciled block takes time back off the one that's running.
     const nextEnd = next.ended_at ? new Date(next.ended_at).getTime() : Date.now()
-    const touching = nextStart === end
-    const upperBound = touching ? nextEnd - MIN_BLOCK_MINUTES * 60_000 : nextStart
-    if (target > upperBound) throw new EditError('That would run into the next block')
 
-    if (touching) {
+    if (target > nextStart || nextStart <= (end as number)) {
+      if (nextEnd <= (end as number)) {
+        // It sits inside this block rather than after it. Moving its start to
+        // this edge would invert it, and there is no nudge that untangles them.
+        throw new EditError('The next block sits inside this one — fix that overlap first')
+      }
+      if (target > nextEnd - min) {
+        throw new EditError('That would leave nothing of the block after it')
+      }
+
       const iso = new Date(target).toISOString()
       await sql.transaction([
         sql`update blocks set ended_at = ${iso}::timestamptz where id = ${blockId} and user_id = ${uid}`,
