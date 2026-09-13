@@ -1,9 +1,10 @@
 # Goals — working record
 
-Started 2026-08-24. Updated 2026-09-12. **This is still the record.** The five
-goals and their ranks now also live in the app (`npm run db:seed-goals`), as a
-ranked list — no category mapping, because step 7 was cut. See "Goals and hours
-stay separate" below.
+Started 2026-08-24. Updated 2026-09-13. **This is still the record**, and the
+thinking still happens here. The five goals, their ranks, their lead measures
+and their milestones now also live in the app (`npm run db:seed-goals`), with a
+scoreboard you fill in by hand. Still no category mapping — step 7 stays cut.
+See "Goals and hours stay separate" and "What the app holds now" below.
 
 To resume: the goals are settled and ranked. Open items are B's first
 conversation, D's doctor thread, and deciding what the week-4 allocation report
@@ -201,11 +202,53 @@ hours I said I would cut actually fall.**
   the goals there, or strip the mapping panel and the sparklines so it is a
   ranked list read *beside* the week's hours. The latter is closer to
   `design/WeeklyReview.dc.html` than to the goals page as built.
-  **2026-09-12: the goals were entered anyway**, so the second half of that
-  choice is now owed — the page as built reports 0.0h in drain red against every
-  goal, which is the failure-by-construction described above, not a finding.
+  **2026-09-12: the goals were entered anyway**, and on 2026-09-13 the page got
+  a scoreboard that doesn't run on hours at all. The mapping panel and the
+  sparklines stayed, on his call — so the 0.0h in drain red is still there, and
+  it still means nothing. The hours column is now captioned as context rather
+  than as a score, which is the smallest honest version of keeping it.
 - **The Goals nav tab** was added 2026-09-10 to make step 7 reachable. Step 7 is
-  gone, but the tab now has the ranked list behind it, so it stays.
+  gone, but the tab now has the ranked list, the lead measures and the
+  milestones behind it, so it stays.
+
+---
+
+## What the app holds now — 2026-09-13
+
+The goals screen stopped being a list. Each goal carries:
+
+- **The lead measure**, written as an implementation intention — when, where,
+  what — with a cadence and a time box: `30 min · 1×/week` for B, `15 min ·
+  3×/week` for D, `120 min · 1×/month` for E. The time target sits on the
+  *session*, never on the goal. "Half an hour on Sunday" is a commitment that
+  can be kept; "two hours a week on my marriage" is not a thing anyone can do.
+- **A scoreboard**, entered by hand: sessions done this period against the
+  target, a plus and a minus, and the last four periods as bars. It is typed in
+  rather than derived, because whether Sunday's conversation actually happened
+  is a judgement no block in the log can make — and a tap-to-log tracker would
+  be a second capture habit competing with the one the baseline is building.
+- **The two-minute version** and **the obstacle**, where the record has them.
+  Where it doesn't — C's lead measure, B's and E's two-minute versions — the
+  field is blank rather than guessed. A blank is a question that gets asked; a
+  plausible guess is one that never does.
+- **Milestones**, flat and optionally dated, which is the fix for D: its real
+  test is twelve months out, and a goal with one reading a year away cannot be
+  steered. The carry test and the doctor thread are the intermediate readings.
+
+**Never miss twice** is the one warning on the page, and it only appears after
+the habit has actually started — two completed periods at zero *following* a
+period with a number in it. A brand-new goal showing MISSED TWICE on day one
+would be the same failure as a report opening at 0.0h.
+
+### Two things this doesn't resolve
+
+- **A and D still compete for the same morning.** The app now states both
+  cadences — Tue/Thu 30 min for A, 3×/week 15 min for D — which makes the
+  collision visible on one screen, but it doesn't stagger them. That's still a
+  decision to take.
+- **The baseline.** Week 4 ends around 2026-09-20. Running lead measures before
+  then is an intervention during the control period. The screen doesn't care
+  when you start ticking; the protocol does.
 
 ---
 
