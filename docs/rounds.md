@@ -31,11 +31,34 @@ Three moving parts, and the third is the point:
 Once the week is planned, the morning notification reads it back to you. There
 is nothing left to decide at 8am, which is the whole exercise.
 
+## Timing a chore
+
+Every chore row on `/rounds` has a **TIME IT** button. It starts a clock; **STOP**
+finishes the chore, logs the measured length as that completion's minutes, and
+writes it back to the chore's "takes" estimate. **×** throws the timing away
+without logging anything, for when the phone stayed in your pocket through lunch.
+
+The estimate is the only input to day capacity, so an estimate nobody revises is
+how a planned week stops resembling a lived one. Timing the same chore twice is
+how "20 minutes" becomes 35 and the plan starts fitting.
+
+Details worth knowing:
+
+- One chore at a time. Two clocks running at once are not two measurements.
+- Only the start instant is stored (in `localStorage`), so a locked phone, a
+  backgrounded tab or a reload comes back with the right elapsed time. Timing is
+  per device, not per account.
+- Rounded to the nearest minute, floor 1, cap 480 — a 40-second bin run is a
+  one-minute chore, not a zero-minute one.
+- While a chore is being timed, its own ✓ and SKIP are disabled: STOP is how
+  that one finishes. If the chore leaves the screen while its clock runs, the
+  timer reappears as a strip under the date.
+
 ## Screens
 
 | Route | What it is for |
 |---|---|
-| `/rounds` | Today's list. Tap a row to mark it done. Overdue-and-unplanned shows separately, because that list is the one worth keeping short. |
+| `/rounds` | Today's list. Tap a row to mark it done, or time it and let the clock set the estimate. Overdue-and-unplanned shows separately, because that list is the one worth keeping short. |
 | `/rounds/plan` | The week. Opens on a suggestion; nothing is written until you press save. `?week=YYYY-MM-DD` shows any other week. |
 | `/rounds/chores` | The list itself — intervals, effort estimates, areas. |
 | `/rounds/renewals` | Dated obligations that can't be done early — inspection, registration, insurance, Global Entry, passport, licence. Warns a configurable number of days ahead. |

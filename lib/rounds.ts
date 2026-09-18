@@ -487,6 +487,40 @@ export async function completeChore(
   `
 }
 
+/**
+ * Finish a chore you timed, and let the clock correct the estimate.
+ *
+ * Two writes that belong together: the completion records what this instance
+ * actually took, and `effort_minutes` becomes that number so the planner budgets
+ * the real thing next week. The estimate is the whole input to day capacity, and
+ * an estimate nobody ever revises is the reason a planned week stops matching a
+ * lived one — timing a chore twice is how "20 minutes" becomes 35.
+ *
+ * Seconds in, minutes out: a 40-second bin run is a one-minute chore, not a
+ * zero-minute one, and nothing is allowed past the 480 the column and the form
+ * both cap at.
+ */
+export async function completeChoreTimed(
+  choreId: string,
+  doneOn: string,
+  seconds: number
+): Promise<void> {
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    throw new RoundsError('That timing does not look like a length of time')
+  }
+  const minutes = Math.min(480, Math.max(1, Math.round(seconds / 60)))
+
+  // Completion first: it checks the chore exists and is yours, so the estimate
+  // write below can't be the thing that touches a row it shouldn't.
+  await completeChore(choreId, doneOn, minutes, null)
+
+  const sql = getSql()
+  await sql`
+    update chores set effort_minutes = ${minutes}
+    where id = ${choreId} and user_id = ${userId()} and archived_at is null
+  `
+}
+
 /** Undo the most recent completion — the tap you made on the wrong row. */
 export async function undoCompletion(choreId: string): Promise<void> {
   const sql = getSql()

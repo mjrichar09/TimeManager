@@ -6,6 +6,7 @@ import { composeDailyDigest, removeSubscription, saveSubscription, sendToAll, ty
 import {
   archiveChore,
   completeChore,
+  completeChoreTimed,
   createChore,
   getRoundsView,
   RoundsError,
@@ -71,6 +72,20 @@ export async function completeChoreAction(
   weekStart?: string
 ): Promise<RoundsResult> {
   return run(weekStart, () => completeChore(choreId, doneOn, null, null))
+}
+
+/**
+ * Finish a chore that was timed on the Today screen. The measured length lands
+ * in the completion log and replaces the chore's estimate — see
+ * `completeChoreTimed`.
+ */
+export async function completeTimedChoreAction(
+  choreId: string,
+  doneOn: string,
+  seconds: number,
+  weekStart?: string
+): Promise<RoundsResult> {
+  return run(weekStart, () => completeChoreTimed(choreId, doneOn, seconds))
 }
 
 export async function undoCompletionAction(
