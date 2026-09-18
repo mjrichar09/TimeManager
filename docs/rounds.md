@@ -58,6 +58,11 @@ In `lib/rounds-plan.ts`, pure and covered by `npm run test:plan`:
   how many minutes over the week is, and you decide: raise a day's capacity, put
   it in anyway, or let it run late on purpose.
 
+The planner only suggests over a week that has no saved plan. Once you save,
+that plan is the week: reopening `/rounds/plan` shows it back exactly as saved,
+the save button greys out until you change something, and rebuilding from what
+is due is what **Suggest again** is for.
+
 Day capacity is the number that makes or breaks this. Be pessimistic — a Tuesday
 that claims an hour and gets twenty minutes produces a plan you abandon by
 Wednesday.

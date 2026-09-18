@@ -103,16 +103,30 @@ function byUrgency(a: Candidate, b: Candidate): number {
   return a.name.localeCompare(b.name)
 }
 
+/**
+ * Minutes each day of the week can take, Monday first.
+ *
+ * A day already past can't take work. Planning Monday's chores on Wednesday is
+ * how a planner loses your trust in week one. The planner screen needs the same
+ * seven numbers even when it isn't suggesting anything, so this lives out here
+ * rather than inside the loop below.
+ */
+export function weekCapacity(weekStart: string, today: string, dayMinutes: number[]): number[] {
+  const start = dayNumber(weekStart)
+  const todayNum = dayNumber(today)
+  return Array.from({ length: 7 }, (_, i) =>
+    start + i < todayNum ? 0 : Math.max(0, dayMinutes[i] ?? 0)
+  )
+}
+
 export function suggestWeek(input: SuggestInput): SuggestedWeek {
   const start = dayNumber(input.weekStart)
-  const todayNum = dayNumber(input.today)
+  const capacity = weekCapacity(input.weekStart, input.today, input.dayMinutes)
 
   const days: PlanDay[] = Array.from({ length: 7 }, (_, i) => ({
     date: isoDate(start + i),
     weekday: i,
-    // A day already past can't take work. Planning Monday's chores on Wednesday
-    // is how a planner loses your trust in week one.
-    capacityMinutes: start + i < todayNum ? 0 : Math.max(0, input.dayMinutes[i] ?? 0),
+    capacityMinutes: capacity[i],
     usedMinutes: 0,
     items: [],
   }))

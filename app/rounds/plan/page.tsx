@@ -8,6 +8,12 @@ export const dynamic = 'force-dynamic'
  * The planner opens on a proposal, not on an empty grid. Auto-suggesting on load
  * is the difference between "plan my week" being a decision and being a glance:
  * nothing is written until Save, so the worst case is a suggestion you ignore.
+ *
+ * But only for a week nobody has planned yet. Once a plan is saved, that plan IS
+ * the week, and re-suggesting over it would undo the decisions the save recorded
+ * — every item deliberately dropped would come back, on a day the heuristic
+ * picked rather than the one you did. A saved week reopens exactly as it was
+ * saved; "Suggest again" is there for when you actually want the other thing.
  */
 export default async function PlanPage({
   searchParams,
@@ -22,7 +28,9 @@ export default async function PlanPage({
   const requested = week && /^\d{4}-\d{2}-\d{2}$/.test(week) ? week : todayIn(settings.timezone)
   const start = weekStart(requested)
 
-  const [view, suggestion] = await Promise.all([getRoundsView(start), suggestForWeek(start)])
+  const view = await getRoundsView(start)
+  const planned = view.plan.some((p) => p.status === 'planned')
+  const suggestion = planned ? null : await suggestForWeek(start)
 
   // Keyed by the week so the arrows work.
   //

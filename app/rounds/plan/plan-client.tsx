@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useMemo, useState, useTransition } from 'react'
 import type { RoundsView } from '@/lib/rounds'
-import { addDays, dayNumber, type SuggestedWeek } from '@/lib/rounds-plan'
+import { addDays, dayNumber, weekCapacity, type SuggestedWeek } from '@/lib/rounds-plan'
 import {
   saveWeekPlanAction,
   suggestWeekAction,
@@ -20,6 +20,13 @@ function itemsOf(suggestion: SuggestedWeek): Item[] {
   )
 }
 
+/** The saved week, in the same flat shape — what the board shows when there is a plan. */
+function committedItems(view: RoundsView): Item[] {
+  return view.plan
+    .filter((p) => p.status === 'planned')
+    .map((p) => ({ itemId: p.ref, date: p.plannedOn }))
+}
+
 /** Keys the committed plan by subject and day, which is how the board identifies a row. */
 function committedKeys(view: RoundsView): Set<string> {
   return new Set(
@@ -32,26 +39,26 @@ export default function PlanClient({
   suggestion,
 }: {
   initial: RoundsView
-  suggestion: SuggestedWeek
+  /** Null for a week that already has a saved plan — that plan is the board. */
+  suggestion: SuggestedWeek | null
 }) {
   const [view, setView] = useState(initial)
-  const [items, setItems] = useState<Item[]>(() => itemsOf(suggestion))
-  const [capacity, setCapacity] = useState<number[]>(() =>
-    suggestion.days.map((d) => d.capacityMinutes)
+  const [items, setItems] = useState<Item[]>(() =>
+    suggestion ? itemsOf(suggestion) : committedItems(initial)
   )
-  // The board arrives holding a proposal nobody has saved yet, so it starts
-  // dirty whenever the suggestion says anything the plan doesn't already.
-  const [dirty, setDirty] = useState(() => {
-    const committed = committedKeys(initial)
-    const proposed = itemsOf(suggestion)
-    return proposed.length !== committed.size || proposed.some((i) => !committed.has(`${i.itemId}|${i.date}`))
-  })
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [adding, setAdding] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
   const start = view.weekStart
+
+  // Derived, not held: capacity is settings plus which days have already gone,
+  // and both of those come back fresh inside `view` after every save.
+  const capacity = useMemo(
+    () => weekCapacity(start, view.today, view.settings.dayMinutes),
+    [start, view.today, view.settings.dayMinutes]
+  )
   const dates = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(start, i)),
     [start]
@@ -73,9 +80,18 @@ export default function PlanClient({
 
   const onBoard = useMemo(() => new Set(items.map((i) => i.itemId)), [items])
 
+  // Whether the board differs from what is stored, worked out rather than
+  // tracked with a flag: shuffle something and shuffle it back and there is
+  // genuinely nothing to save, so the button should say so.
+  const dirty = useMemo(
+    () =>
+      items.length !== committed.size ||
+      items.some((i) => !committed.has(`${i.itemId}|${i.date}`)),
+    [items, committed]
+  )
+
   const change = useCallback((next: Item[]) => {
     setItems(next)
-    setDirty(true)
     setSaved(false)
   }, [])
 
@@ -84,10 +100,7 @@ export default function PlanClient({
       const result = await work()
       if (result.view) setView(result.view)
       setError(result.ok ? null : result.error)
-      if (result.ok) {
-        setDirty(false)
-        setSaved(true)
-      }
+      if (result.ok) setSaved(true)
     })
   }, [])
 
@@ -100,8 +113,6 @@ export default function PlanClient({
       }
       setError(null)
       setItems(itemsOf(result.suggestion))
-      setCapacity(result.suggestion.days.map((d) => d.capacityMinutes))
-      setDirty(true)
       setSaved(false)
     })
   }, [start])
@@ -159,8 +170,9 @@ export default function PlanClient({
       </div>
 
       <p className="mt-2 max-w-[62ch] text-[13px] text-ink-3">
-        Suggested from what comes due and how much time each day has. Move anything you disagree
-        with, then save — nothing is planned until you do.
+        {committed.size > 0
+          ? 'This week as you saved it. Move anything, then save again — or suggest again to rebuild it from what is due.'
+          : 'Suggested from what comes due and how much time each day has. Move anything you disagree with, then save — nothing is planned until you do.'}
       </p>
 
       {error ? (
