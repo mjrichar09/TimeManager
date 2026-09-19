@@ -60,7 +60,7 @@ Details worth knowing:
 |---|---|
 | `/rounds` | Today's list. Tap a row to mark it done, or time it and let the clock set the estimate. Overdue-and-unplanned shows separately, because that list is the one worth keeping short. |
 | `/rounds/plan` | The week. Opens on a suggestion; nothing is written until you press save. `?week=YYYY-MM-DD` shows any other week. |
-| `/rounds/chores` | The list itself — intervals, effort estimates, areas. |
+| `/rounds/chores` | The list itself — intervals, effort estimates, areas. An area is free text; the picker suggests the standing parts of the house (Basement, Bathroom, House, Kitchen, Outside, Upkeep) plus every area already in use, and a group only appears once something is filed under it. |
 | `/rounds/renewals` | Dated obligations that can't be done early — inspection, registration, insurance, Global Entry, passport, licence. Warns a configurable number of days ahead. |
 | `/rounds/settings` | Day capacity, notification hour, and push subscriptions. |
 

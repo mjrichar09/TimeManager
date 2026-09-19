@@ -12,6 +12,18 @@ import {
 } from '../actions'
 import { dueLabel, intervalLabel, minutesLabel, relativeDate } from '../format'
 
+/**
+ * Areas the picker offers before any chore is filed under them.
+ *
+ * An area is free text on the chore, so the list this screen knows about is
+ * only ever what the existing chores say it is. That makes the first chore in a
+ * new part of the house the awkward one: nothing suggests the name, and a typo
+ * files it into a group of its own that looks like a bug. These are the
+ * standing parts of the house, merged with whatever is actually in use — an
+ * area with nothing in it still has no group on the list below, which is right.
+ */
+const SUGGESTED_AREAS = ['Basement', 'Bathroom', 'House', 'Kitchen', 'Outside', 'Upkeep']
+
 const BLANK: ChoreInput = {
   name: '',
   area: null,
@@ -185,7 +197,13 @@ export default function ChoresClient({ initial }: { initial: RoundsView }) {
   }, [])
 
   const areas = useMemo(
-    () => [...new Set(view.chores.map((c) => c.area).filter((a): a is string => !!a))].sort(),
+    () =>
+      [
+        ...new Set([
+          ...view.chores.map((c) => c.area).filter((a): a is string => !!a),
+          ...SUGGESTED_AREAS,
+        ]),
+      ].sort(),
     [view.chores]
   )
 
