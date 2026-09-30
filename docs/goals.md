@@ -12,6 +12,34 @@ is *about* now that it isn't about goals.
 
 ---
 
+## The review screen
+
+`/tally/reports` — M4, built 2026-09-30. Seven sections in the order a review
+has to be read, not the order the data sits in:
+
+1. **Can this data be trusted?** — coverage, checked days, the thinnest day, and
+   whether any day exceeds 24h (which would mean overlapping blocks). Everything
+   below inherits this answer, so it goes first.
+2. **Where the time went** — hours by category. Hue is energy, never identity.
+3. **The three displacements** — the allocation report's new subject. Small
+   multiples, one shared scale.
+4. **The response variable** — the energy run chart and the moved-priority rate.
+5. **The outsourcing queue** — low-value categories with a price, costed monthly.
+6. **Rounds** — interval said vs interval actually achieved, estimate vs clock.
+7. **The systems** — lead-measure counts against target, as a sequence.
+
+Two things it is careful about, both in `lib/reports.ts`: days are cut in the
+user's timezone rather than the server's, and **a block crossing midnight is
+split between the two days it touches**. Sleep crosses midnight every night, so
+attributing it wholly to its start day would leave a hole in every morning.
+
+`npm run export:review` writes the same aggregates to JSON — hours per category
+per week, per-day totals, check answers, chore statistics, goal counts. No
+notes, no times of day. That is the file to hand to someone who needs to read
+the numbers without reading the diary.
+
+---
+
 ## Where the build is
 
 M0–M3 shipped and live at https://tally-five-psi.vercel.app

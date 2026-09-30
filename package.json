@@ -17,7 +17,8 @@
     "test:renewals": "tsx scripts/test-renewals.ts",
     "test:edges": "tsx scripts/test-edges.ts",
     "db:repair-overlaps": "tsx scripts/repair-overlaps.ts",
-    "db:merge-taps": "tsx scripts/merge-duplicate-taps.ts"
+    "db:merge-taps": "tsx scripts/merge-duplicate-taps.ts",
+    "export:review": "tsx scripts/export-review.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

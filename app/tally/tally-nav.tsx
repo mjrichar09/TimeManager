@@ -39,13 +39,18 @@ const TABS = [
     label: 'Goals',
     owns: (path: string) => path.startsWith('/tally/goals'),
   },
+  {
+    href: '/tally/reports',
+    label: 'Review',
+    owns: (path: string) => path.startsWith('/tally/reports'),
+  },
 ]
 
 export default function TallyNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="grid grid-cols-4 gap-[5px] border-b border-rule px-4 py-3">
+    <nav className="grid grid-cols-5 gap-[4px] border-b border-rule px-4 py-3">
       {TABS.map((tab) => {
         const active = tab.owns(pathname)
         return (
@@ -53,7 +58,7 @@ export default function TallyNav() {
             key={tab.href}
             href={tab.href}
             aria-current={active ? 'page' : undefined}
-            className={`border px-1 py-2.5 text-center text-[13px] ${
+            className={`border px-1 py-2.5 text-center text-[12px] ${
               active
                 ? 'border-ink bg-ink text-surface'
                 : 'border-rule bg-surface text-ink-2'
