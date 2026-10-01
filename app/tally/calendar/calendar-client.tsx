@@ -151,7 +151,7 @@ export default function CalendarClient({ states }: { states: DayStates }) {
             const shell = `flex aspect-square flex-col items-center justify-center gap-0.5 border ${
               day.future ? 'border-rule-2 bg-surface-2 text-ink-4' : SWATCH[day.state]
             }`
-            const ring = day.isToday ? { boxShadow: 'inset 0 0 0 2px #141414' } : undefined
+            const ring = day.isToday ? { boxShadow: 'inset 0 0 0 2px var(--color-ink)' } : undefined
 
             return day.future ? (
               <div key={day.date} className={shell} style={ring} aria-disabled="true">

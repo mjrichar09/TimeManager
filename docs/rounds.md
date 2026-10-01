@@ -51,8 +51,8 @@ Details worth knowing:
 - Rounded to the nearest minute, floor 1, cap 480 — a 40-second bin run is a
   one-minute chore, not a zero-minute one.
 - While a chore is being timed, its own ✓ and SKIP are disabled: STOP is how
-  that one finishes. If the chore leaves the screen while its clock runs, the
-  timer reappears as a strip under the date.
+  that one finishes. The running clock, STOP and × live on one strip under the
+  date, so the timer stays reachable even if its chore leaves the list.
 
 ## Screens
 

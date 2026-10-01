@@ -23,9 +23,9 @@ export const metadata: Metadata = {
 
 export default function RoundsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto min-h-dvh max-w-[1180px] px-5 pb-16 pt-6 md:px-10">
+    <div className="pb-tabbar min-h-dvh md:pb-16">
       <RoundsNav />
-      {children}
+      <div className="mx-auto max-w-[1180px] px-5 md:px-10">{children}</div>
     </div>
   )
 }

@@ -25,9 +25,10 @@ export const metadata: Metadata = {
 
 export default function TallyLayout({ children }: { children: React.ReactNode }) {
   // The column is what lets each screen keep its own footer pinned to the
-  // bottom: the nav takes its natural height, the page below it takes the rest.
+  // bottom: the page takes the height, and on a phone the padding keeps that
+  // footer clear of the tab bar fixed underneath it.
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="pb-tabbar flex min-h-dvh flex-col md:pb-0">
       <TallyNav />
       {children}
     </div>

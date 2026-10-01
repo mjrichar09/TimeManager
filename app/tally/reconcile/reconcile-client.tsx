@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import type { Day, Segment } from '@/lib/day'
@@ -15,7 +15,11 @@ import {
   type ActionResult,
 } from '../actions'
 
-export type Category = { slug: string; name: string }
+export type Category = { slug: string; name: string; energy: number }
+
+const MINUTE = 60_000
+/** Drags land on the five-minute grid. Nobody remembers a block to the minute. */
+const SNAP = 5
 
 function localWindow(offsetDays: number) {
   const now = new Date()
@@ -39,45 +43,35 @@ function offsetForDate(date: string | null): number {
   return Math.max(0, Math.round((today.getTime() - then.getTime()) / 86_400_000))
 }
 
-function clock(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+function clock(ms: number): string {
+  return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
 }
 
 function duration(minutes: number): string {
   const h = Math.floor(minutes / 60)
-  const m = minutes % 60
+  const m = Math.round(minutes % 60)
   if (h === 0) return `${m}m`
   return m === 0 ? `${h}h` : `${h}h ${String(m).padStart(2, '0')}m`
 }
 
-/** "HH:MM" in local time, for a native <input type="time">. */
-function toTimeValue(iso: string): string {
-  const d = new Date(iso)
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+function energyColor(energy: number): string {
+  if (energy > 0) return 'var(--color-charge)'
+  if (energy < 0) return 'var(--color-drain)'
+  return 'var(--color-neutral)'
 }
 
-/**
- * Turn "HH:MM" back into an instant, anchored to the day `base` falls on. If the
- * result lands before `base` it belongs to the next day — which happens for a
- * segment running up to midnight.
- */
-function fromTimeValue(base: string, hhmm: string): string {
-  const anchor = new Date(base)
-  const [h, m] = hhmm.split(':').map(Number)
-  const candidate = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), h, m, 0, 0)
-  if (candidate.getTime() < anchor.getTime()) candidate.setDate(candidate.getDate() + 1)
-  return candidate.toISOString()
-}
-
-function midpoint(a: string, b: string): string {
-  return new Date(Math.round((new Date(a).getTime() + new Date(b).getTime()) / 2 / 60000) * 60000).toISOString()
-}
-
-function fill(segment: Segment, selected: boolean): string {
+/** The tint a block wears on the tape: its energy mixed into the surface. */
+function tint(segment: Segment, selected: boolean): string {
   if (segment.kind === 'gap') return 'transparent'
-  if (selected) return segment.energy > 0 ? '#7fb0ea' : segment.energy < 0 ? '#ef9a99' : '#c9c7bd'
-  return segment.energy > 0 ? '#cfdff6' : segment.energy < 0 ? '#f7d5d4' : '#e4e3dd'
+  return `color-mix(in srgb, ${energyColor(segment.energy)} ${selected ? 42 : 24}%, var(--color-surface))`
 }
+
+const ms = (iso: string) => new Date(iso).getTime()
+const snap = (t: number) => Math.round(t / (SNAP * MINUTE)) * SNAP * MINUTE
+
+/** A held handle. The zoom window is frozen with it, so the ground under your
+ * finger doesn't rescale as the block you're dragging changes length. */
+type Drag = { edge: 'start' | 'end'; original: number; value: number; range: [number, number] }
 
 export default function ReconcileClient({ categories }: { categories: Category[] }) {
   const params = useSearchParams()
@@ -85,9 +79,11 @@ export default function ReconcileClient({ categories }: { categories: Category[]
   const [day, setDay] = useState<Day | null>(null)
   const [selected, setSelected] = useState(0)
   const [error, setError] = useState<string | null>(null)
-  const [splitTime, setSplitTime] = useState<string | null>(null)
-  const [fillUntil, setFillUntil] = useState<string | null>(null)
+  const [splitAt, setSplitAt] = useState<number | null>(null)
+  const [fillUntil, setFillUntil] = useState<number | null>(null)
+  const [drag, setDrag] = useState<Drag | null>(null)
   const [pending, startTransition] = useTransition()
+  const tapeRef = useRef<HTMLDivElement>(null)
 
   const window = useMemo(() => localWindow(offset), [offset])
 
@@ -112,8 +108,14 @@ export default function ReconcileClient({ categories }: { categories: Category[]
     startTransition(async () => {
       const result = await loadDayAction(window)
       if (cancelled) return
-      setSelected(0)
-      setSplitTime(null)
+      // Open on the first gap, since that is what reconcile is for; with no gaps,
+      // on the latest block, the one most likely to need a correction.
+      if (result.day) {
+        const segs = result.day.segments
+        const gap = segs.findIndex((x) => x.kind === 'gap')
+        setSelected(gap >= 0 ? gap : Math.max(0, segs.length - 1))
+      }
+      setSplitAt(null)
       setFillUntil(null)
       apply(result)
     })
@@ -122,220 +124,322 @@ export default function ReconcileClient({ categories }: { categories: Category[]
     }
   }, [window, apply])
 
+  const select = (index: number) => {
+    setSelected(index)
+    setSplitAt(null)
+    setFillUntil(null)
+  }
+
   if (!day) {
     return (
       <main className="flex flex-1 items-center justify-center">
-        <p className="font-mono text-[10px] tracking-[0.14em] text-ink-3">LOADING THE DAY…</p>
+        <p className="label">Loading the day…</p>
       </main>
     )
   }
 
   const segments = day.segments
-  const current = segments[Math.min(selected, segments.length - 1)] as Segment | undefined
+  const index = Math.min(selected, segments.length - 1)
+  const current = segments[index] as Segment | undefined
   const isGap = current?.kind === 'gap'
+  const dayFrom = ms(day.from)
+  const dayTo = ms(day.to)
+  const daySpan = Math.max(MINUTE, dayTo - dayFrom)
   const dateLabel = new Date(`${day.date}T12:00:00`).toLocaleDateString([], {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
   })
 
+  // ---- the selected block's edges, live while dragging ----
+  const segStart = current ? ms(current.startedAt) : dayFrom
+  const segEnd = current ? ms(current.endedAt) : dayTo
+  const shownStart = drag?.edge === 'start' ? drag.value : segStart
+  const shownEnd = drag?.edge === 'end' ? drag.value : isGap && fillUntil ? fillUntil : segEnd
+  const split = splitAt ?? snap((segStart + segEnd) / 2)
+
+  // ---- the zoom window around the selection ----
+  const range: [number, number] = (() => {
+    if (drag) return drag.range
+    const len = segEnd - segStart
+    const pad = Math.max(30 * MINUTE, len * 0.45)
+    let a = segStart - pad
+    let b = segEnd + pad
+    const minSpan = 2 * 60 * MINUTE
+    if (b - a < minSpan) {
+      const extra = (minSpan - (b - a)) / 2
+      a -= extra
+      b += extra
+    }
+    if (a < dayFrom) {
+      b += dayFrom - a
+      a = dayFrom
+    }
+    if (b > dayTo) {
+      a -= b - dayTo
+      b = dayTo
+    }
+    return [Math.max(dayFrom, a), Math.min(dayTo, b)]
+  })()
+  const span = Math.max(MINUTE, range[1] - range[0])
+  const pct = (t: number) => ((t - range[0]) / span) * 100
+
+  const timeAt = (clientX: number) => {
+    const rect = tapeRef.current?.getBoundingClientRect()
+    if (!rect) return range[0]
+    const f = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+    return range[0] + f * span
+  }
+
+  // ---- dragging a handle ----
+  const beginDrag = (edge: 'start' | 'end', original: number) => (event: React.PointerEvent) => {
+    if (pending) return
+    event.preventDefault()
+    event.stopPropagation()
+    ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+    setDrag({ edge, original, value: original, range })
+  }
+
+  const moveDrag = (event: React.PointerEvent) => {
+    if (!drag) return
+    let t = snap(timeAt(event.clientX))
+    // Keep at least five minutes of the block, and never past the window.
+    if (drag.edge === 'start') t = Math.min(t, (isGap ? segEnd : shownEnd) - SNAP * MINUTE)
+    else t = Math.max(t, shownStart + SNAP * MINUTE)
+    // An edge pushes its neighbour but may not swallow it: the server refuses
+    // that, and finding out only on release reads as the drag not working.
+    const prev = segments[index - 1]
+    const next = segments[index + 1]
+    if (!isGap && drag.edge === 'start' && prev) {
+      t = Math.max(t, ms(prev.startedAt) + (prev.kind === 'block' ? SNAP * MINUTE : 0))
+    }
+    if (!isGap && drag.edge === 'end' && next) {
+      t = Math.min(t, ms(next.endedAt) - (next.kind === 'block' ? SNAP * MINUTE : 0))
+    }
+    if (isGap) t = Math.min(t, segEnd)
+    t = Math.max(dayFrom, Math.min(dayTo, t))
+    if (t !== drag.value) {
+      setDrag({ ...drag, value: t })
+      if (navigator.vibrate) navigator.vibrate(4)
+    }
+  }
+
+  const endDrag = () => {
+    if (!drag || !current) return
+    const finished = drag
+    setDrag(null)
+    const delta = Math.round((finished.value - finished.original) / MINUTE)
+    if (delta === 0) return
+    if (isGap) {
+      // On a gap the handle doesn't move anything yet — it chooses how much of
+      // the gap the next category tap will fill.
+      setFillUntil(finished.value)
+      return
+    }
+    dispatch(() => moveEdgeAction(window, current.id!, finished.edge, delta))
+  }
+
+  const tapTape = (event: React.MouseEvent) => {
+    if (!current || isGap || current.minutes < 2) return
+    const t = snap(timeAt(event.clientX))
+    if (t > segStart && t < segEnd) setSplitAt(t)
+  }
+
+  const ticks: number[] = []
+  {
+    const stepH = span > 8 * 60 * MINUTE ? 3 : span > 4 * 60 * MINUTE ? 2 : 1
+    const first = new Date(range[0])
+    first.setMinutes(0, 0, 0)
+    for (let t = first.getTime(); t <= range[1]; t += stepH * 60 * MINUTE) if (t >= range[0]) ticks.push(t)
+  }
+
+  const canDragStart = !!current && !isGap
+  const canDragEnd = !!current && (isGap || !current.running)
+
   return (
-    <main className="flex flex-1 flex-col">
-      <header className="px-4 pt-6 pb-3">
+    <main className="flex flex-1 flex-col md:mx-auto md:w-full md:max-w-[640px]">
+      <header className="px-5 pt-5 pb-3">
         <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => setOffset((o) => o + 1)}
-            className="font-mono text-[10px] tracking-[0.14em] text-ink-3"
-          >
-            ‹ PREV
+          <button type="button" onClick={() => setOffset((o) => o + 1)} className="label hover:text-ink">
+            ‹ Prev
           </button>
-          <span className="font-mono text-[10px] tracking-[0.14em] text-ink-3">
-            RECONCILE · {dateLabel.toUpperCase()}
-          </span>
+          <span className="label">{dateLabel}</span>
           <button
             type="button"
             onClick={() => setOffset((o) => Math.max(0, o - 1))}
             disabled={offset === 0}
-            className="font-mono text-[10px] tracking-[0.14em] text-ink-3 disabled:text-ink-4/40"
+            className="label hover:text-ink disabled:opacity-30"
           >
-            NEXT ›
+            Next ›
           </button>
         </div>
         <div className="mt-2 flex items-baseline justify-between gap-3">
-          <div className="text-2xl font-semibold tracking-tight">
+          <h1 className="tnum font-display text-[28px] leading-tight font-semibold">
             {duration(day.loggedMinutes)} logged
-          </div>
-          <div
-            className={`tnum font-mono text-[13px] ${day.gapCount === 0 ? 'text-ink-2' : 'text-drain-ink'}`}
-          >
-            {day.gapCount === 0 ? 'no gaps' : `${day.gapCount} gaps · ${duration(day.gapMinutes)}`}
-          </div>
+          </h1>
+          <span className={`label ${day.gapCount === 0 ? '' : 'text-drain-ink'}`}>
+            {day.gapCount === 0 ? 'No gaps' : `${day.gapCount} gap${day.gapCount === 1 ? '' : 's'} · ${duration(day.gapMinutes)}`}
+          </span>
         </div>
       </header>
 
-      <div className="px-4">
-        <div className="flex h-[104px] gap-[2px] border border-rule bg-surface p-[2px]">
-          {segments.map((segment, index) => (
+      {/* The whole day. Tap any piece to select it; the outlined window is the
+          stretch the tape below is zoomed into. */}
+      <div className="px-5">
+        <div className="relative">
+          <div className="flex h-[20px] gap-px overflow-hidden rounded-[4px]">
+            {segments.map((segment, i) => (
+              <button
+                key={`${segment.kind}-${segment.startedAt}`}
+                type="button"
+                onClick={() => select(i)}
+                aria-label={`${segment.name} ${clock(ms(segment.startedAt))}`}
+                className={`block h-full min-w-[3px] ${segment.kind === 'gap' ? 'gap-hatch' : ''}`}
+                style={{
+                  flexGrow: segment.minutes,
+                  flexBasis: 0,
+                  background: segment.kind === 'gap' ? undefined : energyColor(segment.energy),
+                  opacity: i === index ? 1 : 0.85,
+                }}
+              />
+            ))}
+          </div>
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -top-[4px] -bottom-[4px] rounded-[5px] border-[1.5px] border-ink transition-[left,width] duration-200"
+            style={{
+              left: `${((range[0] - dayFrom) / daySpan) * 100}%`,
+              width: `${((range[1] - range[0]) / daySpan) * 100}%`,
+            }}
+          />
+        </div>
+        <div className="tnum mt-1.5 flex justify-between font-mono text-[9.5px] text-ink-3">
+          <span>{clock(dayFrom)}</span>
+          <span>{clock(dayTo)}</span>
+        </div>
+      </div>
+
+      {/* The tape: the zoomed stretch, with handles on the selected block. */}
+      <div
+        onClick={tapTape}
+        onPointerMove={moveDrag}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        className="relative mt-5 h-[150px] touch-none border-y border-rule bg-surface select-none"
+      >
+        {/* Inset, so a handle at either end of the window stays on screen. */}
+        <div ref={tapeRef} className="absolute inset-y-0 right-6 left-6">
+        {segments.map((segment, i) => {
+          let a = ms(segment.startedAt)
+          let b = ms(segment.endedAt)
+          if (i === index) {
+            a = shownStart
+            b = isGap ? segEnd : shownEnd
+          } else if (drag && !isGap) {
+            // A dragged edge pushes its neighbour rather than overlapping it.
+            if (i === index - 1 && drag.edge === 'start') b = Math.min(b, shownStart)
+            if (i === index + 1 && drag.edge === 'end') a = Math.max(a, shownEnd)
+          }
+          const s = Math.max(a, range[0])
+          const e = Math.min(b, range[1])
+          if (e <= s) return null
+          const width = pct(e) - pct(s)
+          return (
             <button
               key={`${segment.kind}-${segment.startedAt}`}
               type="button"
-              onClick={() => {
-                setSelected(index)
-                setSplitTime(null)
-                setFillUntil(null)
+              onClick={(event) => {
+                if (i !== index) {
+                  event.stopPropagation()
+                  select(i)
+                }
               }}
-              aria-label={`${segment.name} ${clock(segment.startedAt)}`}
-              className={`block h-full min-w-[8px] ${segment.kind === 'gap' ? 'gap-hatch' : ''}`}
+              className={`absolute top-[34px] bottom-[38px] flex items-end overflow-hidden rounded-[4px] px-1.5 pb-1.5 text-left text-[11px] font-medium whitespace-nowrap text-ink ${
+                segment.kind === 'gap' ? 'gap-hatch text-drain-ink' : ''
+              } ${i === index ? 'outline-2 outline-offset-1 outline-ink' : ''}`}
               style={{
-                flexGrow: segment.minutes,
-                flexBasis: 0,
-                background: fill(segment, index === selected),
-                boxShadow: index === selected ? 'inset 0 0 0 2px #141414' : 'none',
+                left: `calc(${pct(s)}% + 1px)`,
+                width: `calc(${width}% - 2px)`,
+                background: segment.kind === 'gap' ? undefined : tint(segment, i === index),
               }}
-            />
-          ))}
-        </div>
-        <div className="tnum mt-1.5 flex justify-between font-mono text-[9px] tracking-[0.08em] text-ink-3">
-          <span>{clock(day.from)}</span>
-          <span>{clock(day.to)}</span>
+            >
+              {width > 14 ? (segment.kind === 'gap' ? duration(segment.minutes) : segment.name) : ''}
+            </button>
+          )
+        })}
+
+        {isGap && fillUntil !== null && fillUntil > segStart ? (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute top-[34px] bottom-[38px] rounded-[4px] border-2 border-dashed border-ink"
+            style={{ left: `${pct(Math.max(segStart, range[0]))}%`, width: `${pct(fillUntil) - pct(Math.max(segStart, range[0]))}%` }}
+          />
+        ) : null}
+
+        {!isGap && current && current.minutes >= 2 && !drag ? (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute top-[28px] bottom-[32px] w-0 border-l-2 border-dashed border-ink/70"
+            style={{ left: `${pct(split)}%` }}
+          />
+        ) : null}
+
+        {ticks.map((t) => (
+          <span key={t}>
+            <span className="absolute bottom-0 h-2 w-px bg-rule" style={{ left: `${pct(t)}%` }} />
+            <span
+              className="tnum absolute bottom-[12px] -translate-x-1/2 font-mono text-[9.5px] text-ink-3"
+              style={{ left: `${pct(t)}%` }}
+            >
+              {String(new Date(t).getHours()).padStart(2, '0')}
+            </span>
+          </span>
+        ))}
+
+        {canDragStart ? (
+          <Handle
+            left={pct(shownStart)}
+            label={clock(shownStart)}
+            active={drag?.edge === 'start'}
+            onPointerDown={beginDrag('start', segStart)}
+            name="start"
+          />
+        ) : null}
+        {canDragEnd ? (
+          <Handle
+            left={pct(isGap ? (drag?.edge === 'end' ? drag.value : fillUntil ?? segEnd) : shownEnd)}
+            label={clock(isGap ? (drag?.edge === 'end' ? drag.value : fillUntil ?? segEnd) : shownEnd)}
+            active={drag?.edge === 'end'}
+            onPointerDown={beginDrag('end', isGap ? fillUntil ?? segEnd : segEnd)}
+            name={isGap ? 'fill until' : 'end'}
+          />
+        ) : null}
         </div>
       </div>
 
       {error ? (
-        <div className="mx-4 mt-3 bg-drain-ink px-3 py-2 font-mono text-[11px] text-surface">
-          {error}
-        </div>
+        <div className="mx-5 mt-3 rounded-lg bg-drain-ink px-3 py-2 font-mono text-[11px] text-surface">{error}</div>
       ) : null}
 
       {current ? (
-        <div className="mx-4 mt-4 border border-rule bg-surface p-4">
-          <div
-            className={`font-mono text-[10px] tracking-[0.14em] ${isGap ? 'text-drain-ink' : 'text-ink-3'}`}
-          >
-            {isGap ? 'UNLOGGED GAP' : current.live ? 'RUNNING NOW' : 'SELECTED BLOCK'}
-          </div>
-          <div className="mt-2 flex items-baseline justify-between gap-3">
-            <div className="text-[19px] font-semibold tracking-tight">{current.name}</div>
-            <div className="tnum font-mono text-[13px] text-ink-2">
-              {clock(current.startedAt)} – {current.live ? 'now' : clock(current.endedAt)}
+        <section className="flex flex-col gap-3 px-5 pt-4">
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <div className={`label ${isGap ? 'text-drain-ink' : ''}`}>
+                {isGap ? 'Unlogged' : current.live ? 'Running now' : 'Selected'} · {clock(shownStart)} –{' '}
+                {current.live ? 'now' : clock(isGap ? fillUntil ?? segEnd : shownEnd)}
+              </div>
+              <h2 className="truncate font-display text-[22px] leading-tight font-semibold">
+                {isGap ? 'Nothing recorded' : current.name}
+              </h2>
+            </div>
+            <div className="tnum font-display text-[28px] leading-none font-medium">
+              {duration(Math.round(((isGap ? fillUntil ?? segEnd : shownEnd) - shownStart) / MINUTE))}
             </div>
           </div>
 
-          {!isGap && current.id ? (
-            <div className="mt-3.5 flex gap-5 border-t border-rule-2 pt-3.5">
-              <div>
-                <div className="font-mono text-[9px] tracking-[0.12em] text-ink-3">START</div>
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => dispatch(() => moveEdgeAction(window, current.id!, 'start', -5))}
-                    className="size-[46px] border border-rule-strong bg-surface text-[17px] active:bg-surface-2 disabled:opacity-40"
-                  >
-                    −
-                  </button>
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => dispatch(() => moveEdgeAction(window, current.id!, 'start', 5))}
-                    className="size-[46px] border border-rule-strong bg-surface text-[17px] active:bg-surface-2 disabled:opacity-40"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-              <div>
-                <div className="font-mono text-[9px] tracking-[0.12em] text-ink-3">END</div>
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    disabled={pending || current.running}
-                    onClick={() => dispatch(() => moveEdgeAction(window, current.id!, 'end', -5))}
-                    className="size-[46px] border border-rule-strong bg-surface text-[17px] active:bg-surface-2 disabled:opacity-40"
-                  >
-                    −
-                  </button>
-                  <button
-                    type="button"
-                    disabled={pending || current.running}
-                    onClick={() => dispatch(() => moveEdgeAction(window, current.id!, 'end', 5))}
-                    className="size-[46px] border border-rule-strong bg-surface text-[17px] active:bg-surface-2 disabled:opacity-40"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-              <div className="ml-auto text-right">
-                <div className="font-mono text-[9px] tracking-[0.12em] text-ink-3">LENGTH</div>
-                <div className="tnum mt-1 font-mono text-[21px] font-medium tracking-tight">
-                  {duration(current.minutes)}
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-          {!isGap && current.id ? (
-            <div className="mt-4 flex items-end gap-2.5 border-t border-rule-2 pt-3.5">
-              <div className="flex-1">
-                <div className="font-mono text-[9px] tracking-[0.12em] text-ink-3">
-                  SPLIT AT
-                </div>
-                <input
-                  type="time"
-                  value={splitTime ?? toTimeValue(midpoint(current.startedAt, current.endedAt))}
-                  onChange={(event) => setSplitTime(event.target.value)}
-                  className="tnum mt-1.5 w-full border border-rule bg-surface px-2.5 py-3 font-mono text-[17px] outline-none focus:border-rule-strong"
-                />
-              </div>
-              <button
-                type="button"
-                disabled={pending || current.minutes < 2}
-                onClick={() =>
-                  dispatch(
-                    () =>
-                      splitBlockAction(
-                        window,
-                        current.id!,
-                        fromTimeValue(
-                          current.startedAt,
-                          splitTime ?? toTimeValue(midpoint(current.startedAt, current.endedAt))
-                        )
-                      ),
-                    // Land on the second half — the piece you split off is
-                    // almost always the one you meant to relabel.
-                    () => setSelected((i) => i + 1)
-                  )
-                }
-                className="border border-ink bg-ink px-4 py-3.5 text-sm text-surface disabled:opacity-40"
-              >
-                Split
-              </button>
-            </div>
-          ) : null}
-
-          {isGap ? (
-            <div className="mt-4 border-t border-rule-2 pt-3.5">
-              <div className="font-mono text-[9px] tracking-[0.12em] text-ink-3">
-                FILL FROM {clock(current.startedAt)} UNTIL
-              </div>
-              <input
-                type="time"
-                value={fillUntil ?? toTimeValue(current.endedAt)}
-                onChange={(event) => setFillUntil(event.target.value)}
-                className="tnum mt-1.5 w-full border border-rule bg-surface px-2.5 py-3 font-mono text-[17px] outline-none focus:border-rule-strong"
-              />
-              <p className="mt-1.5 text-[11px] leading-snug text-ink-3">
-                Defaults to the whole gap. Shorten it to log one thing at a time — what is
-                left stays a gap.
-              </p>
-            </div>
-          ) : null}
-
-          <div className="mt-4 font-mono text-[9px] tracking-[0.12em] text-ink-3">
-            {isGap ? 'FILL WITH' : 'RECATEGORISE'}
-          </div>
-          <div className="mt-2 grid grid-cols-3 gap-[5px]">
+          <div className="label">{isGap ? 'Fill with' : 'Recategorise'}</div>
+          <div className="no-scrollbar -mx-5 flex gap-1.5 overflow-x-auto px-5 pb-1">
             {categories.map((category) => {
               const active = !isGap && category.slug === current.slug
               return (
@@ -349,56 +453,128 @@ export default function ReconcileClient({ categories }: { categories: Category[]
                         ? fillGapAction(
                             window,
                             current.startedAt,
-                            fillUntil
-                              ? fromTimeValue(current.startedAt, fillUntil)
-                              : current.endedAt,
+                            fillUntil ? new Date(fillUntil).toISOString() : current.endedAt,
                             category.slug
                           )
                         : recategorizeAction(window, current.id!, category.slug)
                     )
                   }
-                  className={`border px-2.5 py-[11px] text-left text-xs leading-tight disabled:opacity-100 ${
-                    active ? 'border-ink bg-ink text-surface' : 'border-rule bg-surface text-ink'
+                  className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium disabled:opacity-100 ${
+                    active ? 'border-ink bg-ink text-surface' : 'border-rule bg-surface text-ink-2'
                   }`}
                 >
+                  <span className="size-[7px] rounded-full" style={{ background: energyColor(category.energy) }} />
                   {category.name}
                 </button>
               )
             })}
           </div>
 
-          {!isGap && current.id && !current.running ? (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => dispatch(() => deleteBlockAction(window, current.id!))}
-              className="mt-3 w-full border border-rule px-3 py-2.5 font-mono text-[10px] tracking-[0.12em] text-drain-ink disabled:opacity-40"
-            >
-              DELETE — LEAVE IT UNLOGGED
-            </button>
-          ) : null}
-        </div>
+          {!isGap && current.id ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                disabled={pending || current.minutes < 2}
+                onClick={() =>
+                  dispatch(
+                    () => splitBlockAction(window, current.id!, new Date(split).toISOString()),
+                    // Land on the second half — the piece you split off is
+                    // almost always the one you meant to relabel.
+                    () => {
+                      setSelected((i) => i + 1)
+                      setSplitAt(null)
+                    }
+                  )
+                }
+                className="rounded-lg bg-ink px-3.5 py-2.5 text-[13px] font-medium text-surface disabled:opacity-40"
+              >
+                Split at {clock(split)}
+              </button>
+              <span className="text-[11.5px] text-ink-3">Tap the tape to move the split</span>
+              {!current.running ? (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => dispatch(() => deleteBlockAction(window, current.id!))}
+                  className="ml-auto px-2 py-2 text-[12.5px] font-medium text-drain-ink disabled:opacity-40"
+                >
+                  Delete
+                </button>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-[11.5px] text-ink-3">
+              Drag the handle to fill part of the gap. What&rsquo;s left stays unlogged.
+            </p>
+          )}
+        </section>
       ) : null}
 
-      <div className="mt-auto border-t border-rule p-4">
+      <div className="mt-auto p-4">
         {day.complete ? (
           <Link
             href={`/tally/check?date=${day.date}`}
-            className="block w-full border border-ink bg-ink px-3 py-[17px] text-center text-[15px] text-surface"
+            className="flex w-full items-center justify-between rounded-xl bg-ink px-4 py-4 text-[14px] font-medium text-surface"
           >
-            Day complete — go to check
+            <span>Day complete — go to check</span>
+            <span aria-hidden>→</span>
           </Link>
         ) : (
           <button
             type="button"
             disabled={pending}
             onClick={() => dispatch(() => completeDayAction(window))}
-            className="w-full border border-ink bg-ink px-3 py-[17px] text-[15px] text-surface disabled:opacity-40"
+            className="flex w-full items-center justify-between rounded-xl bg-ink px-4 py-4 text-[14px] font-medium text-surface disabled:opacity-40"
           >
-            {day.gapCount === 0 ? 'Mark day complete' : 'Mark day complete anyway'}
+            <span>
+              {day.gapCount === 0
+                ? `Mark ${new Date(`${day.date}T12:00:00`).toLocaleDateString([], { weekday: 'long' })} complete`
+                : 'Mark complete anyway'}
+            </span>
+            <span aria-hidden>→</span>
           </button>
         )}
       </div>
     </main>
+  )
+}
+
+function Handle({
+  left,
+  label,
+  active,
+  onPointerDown,
+  name,
+}: {
+  left: number
+  label: string
+  active: boolean
+  onPointerDown: (event: React.PointerEvent) => void
+  name: string
+}) {
+  return (
+    <>
+      <span
+        className={`tnum pointer-events-none absolute top-[5px] -translate-x-1/2 rounded-[3px] px-1.5 py-px font-mono text-[11px] font-medium ${
+          active ? 'bg-charge text-white' : 'bg-ink text-surface'
+        }`}
+        style={{ left: `${left}%` }}
+      >
+        {label}
+      </span>
+      <button
+        type="button"
+        aria-label={`Drag the ${name}`}
+        onPointerDown={onPointerDown}
+        onClick={(event) => event.stopPropagation()}
+        className="absolute top-[22px] bottom-[26px] z-10 -ml-[16px] grid w-[32px] cursor-ew-resize touch-none place-items-center"
+        style={{ left: `${left}%` }}
+      >
+        <span className="absolute inset-y-0 w-[4px] rounded-full bg-ink" />
+        <span
+          className={`relative h-[28px] w-[15px] rounded-[8px] border-2 border-ink ${active ? 'bg-ink' : 'bg-surface'}`}
+        />
+      </button>
+    </>
   )
 }

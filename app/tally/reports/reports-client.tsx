@@ -558,9 +558,9 @@ export default function ReportsClient({ reports }: { reports: Reports }) {
                             title={`${p.periodStart} — ${p.doneCount}`}
                             className="flex h-7 w-9 items-center justify-center border font-mono text-[10px]"
                             style={{
-                              borderColor: met ? CHARGE : part ? '#d9d8d2' : '#d9d8d2',
-                              background: met ? CHARGE : part ? '#cfdff6' : '#fcfcfb',
-                              color: met ? '#fcfcfb' : '#5a5954',
+                              borderColor: met ? CHARGE : part ? 'var(--color-rule)' : 'var(--color-rule)',
+                              background: met ? CHARGE : part ? 'var(--color-charge-fill)' : 'var(--color-surface)',
+                              color: met ? 'var(--color-surface)' : 'var(--color-ink-2)',
                             }}
                           >
                             {p.doneCount}

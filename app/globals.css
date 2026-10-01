@@ -5,6 +5,7 @@
    charge, everything else is neutral. Don't introduce a third accent. */
 @theme {
   --font-sans: var(--font-plex-sans), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-plex-condensed), 'Arial Narrow', var(--font-plex-sans), system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
   --color-ground: #f2f2ef;
@@ -26,7 +27,40 @@
   --color-drain: #e34948;
   --color-drain-fill: #f7d5d4;
   --color-drain-ink: #c0392b;
+  --color-neutral: #a9a8a0;
   --color-neutral-fill: #e4e3dd;
+
+  --color-hatch-a: #f5cfce;
+  --color-hatch-b: #fbeceb;
+}
+
+/* Dark mode is the same pair stepped for a dark ground, not an inversion: the
+   blue and red keep their meaning and their contrast against the surface. Tailwind
+   reads every colour through these variables, so redefining them is the whole
+   switch. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --color-ground: #121211;
+    --color-surface: #1a1a19;
+    --color-surface-2: #242422;
+    --color-ink: #f4f3ee;
+    --color-ink-2: #c3c2b7;
+    --color-ink-3: #8f8e86;
+    --color-ink-4: #5f5e58;
+    --color-rule: #34332f;
+    --color-rule-2: #2a2927;
+    --color-rule-strong: #4a4944;
+    --color-charge: #3987e5;
+    --color-charge-fill: #1c3350;
+    --color-drain: #e66767;
+    --color-drain-fill: #4a2322;
+    --color-drain-ink: #f08a88;
+    --color-neutral: #75746d;
+    --color-neutral-fill: #2f2e2b;
+    --color-hatch-a: #4a2322;
+    --color-hatch-b: #2b1a19;
+  }
 }
 
 body {
@@ -40,8 +74,57 @@ body {
   font-feature-settings: 'tnum' 1;
 }
 
-/* Unlogged stretches on the reconcile strip. Hatching, not a flat fill, so a
-   gap never reads as just another category. */
+/* Unlogged stretches. Hatching, not a flat fill, so a gap never reads as just
+   another category. */
 .gap-hatch {
-  background-image: repeating-linear-gradient(135deg, #f5cfce 0 4px, #fbeceb 4px 8px);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--color-hatch-a) 0 4px,
+    var(--color-hatch-b) 4px 8px
+  );
+}
+
+/* The small spaced caps used for labels across both apps. One definition, so
+   the instrument labels stay identical from screen to screen. In the components
+   layer so a colour utility on the same element still wins. */
+@layer components {
+  .label {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-ink-3);
+  }
+}
+
+/* Room for the bottom tab bar, plus the home indicator on a notched phone.
+   Declared as utilities so `md:pb-0` can switch them off on a desktop. */
+@utility pb-tabbar {
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Horizontal chip rows scroll without a scrollbar eating 10px of a phone. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fill-in {
+    animation: fill-in 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+}
+
+@keyframes fill-in {
+  from {
+    transform: scale(0.96);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }

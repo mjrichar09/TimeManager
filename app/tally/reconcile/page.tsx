@@ -7,11 +7,11 @@ export const dynamic = 'force-dynamic'
 async function loadCategories(): Promise<Category[]> {
   const sql = getSql()
   const rows = (await sql`
-    select slug, name from categories
+    select slug, name, energy from categories
     where user_id = ${userId()} and archived_at is null
     order by is_quick desc, sort_order asc
-  `) as Array<{ slug: string; name: string }>
-  return rows
+  `) as Array<{ slug: string; name: string; energy: number }>
+  return rows.map((r) => ({ ...r, energy: Number(r.energy) }))
 }
 
 export default async function ReconcilePage() {

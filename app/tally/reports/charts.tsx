@@ -17,12 +17,12 @@ import { useId, useState } from 'react'
  * is throwing away the one thing it has over a printed one.
  */
 
-export const CHARGE = '#2a78d6'
-export const DRAIN = '#e34948'
-export const NEUTRAL = '#8d8c85'
-export const CHARGE_FILL = '#cfdff6'
-export const DRAIN_FILL = '#f7d5d4'
-export const NEUTRAL_FILL = '#e4e3dd'
+export const CHARGE = 'var(--color-charge)'
+export const DRAIN = 'var(--color-drain)'
+export const NEUTRAL = 'var(--color-ink-3)'
+export const CHARGE_FILL = 'var(--color-charge-fill)'
+export const DRAIN_FILL = 'var(--color-drain-fill)'
+export const NEUTRAL_FILL = 'var(--color-neutral-fill)'
 
 export function energyColor(energy: number, fill = false): string {
   if (energy > 0) return fill ? CHARGE_FILL : CHARGE
@@ -192,7 +192,7 @@ export function LineChart({
             x={padL - 8}
             y={py(t) + 3.5}
             textAnchor="end"
-            fill="#a9a8a0"
+            fill="var(--color-ink-4)"
             style={{ fontSize: '10px', fontFamily: 'var(--font-plex-mono), monospace' }}
           >
             {t % 1 === 0 ? t : t.toFixed(1)}
@@ -205,7 +205,7 @@ export function LineChart({
             x2={W}
             y1={py(t)}
             y2={py(t)}
-            stroke="#e6e5df"
+            stroke="var(--color-rule-2)"
             strokeWidth={1}
             vectorEffect="non-scaling-stroke"
           />
@@ -217,7 +217,7 @@ export function LineChart({
             x2={px(hover.i)}
             y1={4}
             y2={height - 20}
-            stroke="#b9b8b0"
+            stroke="var(--color-rule-strong)"
             strokeWidth={1}
             vectorEffect="non-scaling-stroke"
           />
@@ -256,7 +256,7 @@ export function LineChart({
                   cy={py(p.y)}
                   r={hover?.i === i ? 5 : 2.5}
                   fill={s.color}
-                  stroke="#fcfcfb"
+                  stroke="var(--color-surface)"
                   strokeWidth={hover?.i === i ? 1 : 0}
                   vectorEffect="non-scaling-stroke"
                 />

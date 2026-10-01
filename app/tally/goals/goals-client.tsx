@@ -76,11 +76,11 @@ function Sparkline({ weeks }: { weeks: number[] }) {
 
   return (
     <svg viewBox="0 0 120 34" width="120" height="34" className="shrink-0 overflow-visible">
-      <line x1="0" y1="33" x2="120" y2="33" stroke="#efeee9" strokeWidth="1" />
+      <line x1="0" y1="33" x2="120" y2="33" stroke="var(--color-rule-2)" strokeWidth="1" />
       <path
         d={path}
         fill="none"
-        stroke={rising ? '#2a78d6' : '#e34948'}
+        stroke={rising ? 'var(--color-charge)' : 'var(--color-drain)'}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -816,10 +816,10 @@ export default function GoalsClient({ initial }: { initial: GoalsView }) {
                   style={{
                     background:
                       category.energy > 0
-                        ? '#cfdff6'
+                        ? 'var(--color-charge-fill)'
                         : category.energy < 0
-                          ? '#f7d5d4'
-                          : '#e4e3dd',
+                          ? 'var(--color-drain-fill)'
+                          : 'var(--color-neutral-fill)',
                   }}
                 />
                 <span className="flex-1 truncate text-[13px]">{category.name}</span>

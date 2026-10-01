@@ -80,11 +80,17 @@ export function longDate(iso: string): string {
  * is not a date at all.
  */
 export function longDateWithYear(iso: string): string {
-  return new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', {
+  // Assembled from parts rather than taken whole: Node and the browser ship
+  // different ICU data, and one of them puts a comma after the weekday. The
+  // server-rendered text then disagrees with the client's and React throws the
+  // whole tree away to re-render it.
+  const parts = new Intl.DateTimeFormat('en-GB', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC',
-  })
+  }).formatToParts(new Date(iso + 'T00:00:00Z'))
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? ''
+  return `${part('weekday')} ${part('day')} ${part('month')} ${part('year')}`
 }

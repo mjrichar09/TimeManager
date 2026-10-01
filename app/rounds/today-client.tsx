@@ -114,19 +114,47 @@ function clockLabel(seconds: number): string {
   return hours > 0 ? `${hours}:${pad(minutes)}:${pad(rest)}` : `${minutes}:${pad(rest)}`
 }
 
-function StateChip({ chore }: { chore: Chore }) {
-  const tone =
-    chore.state === 'overdue'
-      ? 'bg-drain-fill text-drain-ink'
-      : chore.state === 'due'
-        ? 'bg-surface-2 text-ink-2'
-        : 'bg-transparent text-ink-3'
-
+/**
+ * Lateness as a length. The grey bar is how far through its interval a chore is;
+ * the tick is the due date; anything past the tick is red. "22 days late" becomes
+ * something you see down the list without reading a single label.
+ */
+function DueBar({ chore }: { chore: Chore }) {
+  if (!chore.lastDoneOn) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="h-[6px] flex-1 rounded-full border border-dashed border-rule-strong" />
+        <span className="font-mono text-[9.5px] text-ink-3">never done</span>
+      </div>
+    )
+  }
+  const since = Math.max(0, chore.intervalDays + chore.daysOverdue)
+  const cap = Math.max(since, chore.intervalDays) * 1.08
+  const line = (chore.intervalDays / cap) * 100
+  const fill = (Math.min(since, chore.intervalDays) / cap) * 100
+  const late = since > chore.intervalDays ? ((since - chore.intervalDays) / cap) * 100 : 0
   return (
-    <span className={`tnum shrink-0 px-1.5 py-0.5 font-mono text-[10px] tracking-[0.1em] ${tone}`}>
-      {dueLabel(chore.daysOverdue).toUpperCase()}
-    </span>
+    <div
+      className="relative h-[6px] rounded-full bg-neutral-fill"
+      role="img"
+      aria-label={`${since} of ${chore.intervalDays} days since last done`}
+    >
+      <span className="absolute inset-y-0 left-0 rounded-full bg-ink-3" style={{ width: `${fill}%` }} />
+      {late > 0 ? (
+        <span
+          className="absolute inset-y-0 rounded-r-full bg-drain"
+          style={{ left: `${line}%`, width: `${late}%` }}
+        />
+      ) : null}
+      <span className="absolute -top-[4px] -bottom-[4px] w-[2px] -translate-x-1/2 bg-ink" style={{ left: `${line}%` }} />
+    </div>
   )
+}
+
+function lateText(chore: Chore): string | null {
+  if (chore.daysOverdue > 0) return `${chore.daysOverdue}d late`
+  if (chore.daysOverdue === 0) return 'due today'
+  return null
 }
 
 export default function TodayClient({ initial }: { initial: RoundsView }) {
@@ -178,55 +206,36 @@ export default function TodayClient({ initial }: { initial: RoundsView }) {
   )
 
   /**
-   * The timer control for one chore row.
-   *
-   * One chore at a time: two clocks running at once aren't two measurements,
-   * they're two wrong ones, so every other row's button goes quiet while one is
-   * going. Stopping the clock finishes the chore — there is no separate ✓ to
-   * remember afterwards — and × throws the timing away without logging
-   * anything, which is what you want when the phone was in your pocket through
-   * lunch.
+   * The row-level timer button. One chore at a time: two clocks running at once
+   * aren't two measurements, they're two wrong ones, so every other row's button
+   * goes quiet while one is going. Stopping happens on the strip at the top.
    */
-  const timerControl = (choreId: string, name: string) => {
-    if (timer?.choreId === choreId) {
-      return (
-        <span className="flex shrink-0 items-center gap-2">
-          <span className="tnum font-mono text-[12px] text-ink" aria-live="polite">
-            {clockLabel(elapsed)}
-          </span>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={finishTimer}
-            className="border border-ink bg-ink px-2.5 py-1 font-mono text-[10px] tracking-[0.1em] text-surface disabled:opacity-40"
-          >
-            STOP
-          </button>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={discardTimer}
-            className="px-1 font-mono text-[13px] leading-none text-ink-4 hover:text-drain-ink disabled:opacity-40"
-            aria-label={`Throw away the timing for ${name}`}
-          >
-            ×
-          </button>
-        </span>
-      )
-    }
+  const timeButton = (choreId: string, name: string) => (
+    <button
+      type="button"
+      disabled={pending || timer !== null}
+      onClick={() => startTimer(choreId)}
+      className={`font-mono text-[10px] font-medium tracking-[0.08em] disabled:opacity-40 ${
+        timer?.choreId === choreId ? 'text-charge' : 'text-ink-2 hover:text-ink'
+      }`}
+      aria-label={`Time ${name}`}
+    >
+      {timer?.choreId === choreId ? 'TIMING…' : 'TIME IT'}
+    </button>
+  )
 
-    return (
-      <button
-        type="button"
-        disabled={pending || timer !== null}
-        onClick={() => startTimer(choreId)}
-        className="shrink-0 border border-rule px-2.5 py-1 font-mono text-[10px] tracking-[0.1em] text-ink-2 hover:border-rule-strong disabled:opacity-40"
-        aria-label={`Time ${name}`}
-      >
-        TIME IT
-      </button>
-    )
-  }
+  /** The round button on the right of a row: finishes the chore. */
+  const doneButton = (choreId: string, name: string) => (
+    <button
+      type="button"
+      disabled={pending || timer?.choreId === choreId}
+      onClick={() => dispatch(() => completeChoreAction(choreId, view.today, view.weekStart))}
+      className="grid size-[40px] shrink-0 place-items-center rounded-full border-[1.5px] border-ink-3 text-[16px] text-transparent transition-colors hover:border-ink hover:text-ink-3 active:bg-ink active:text-surface disabled:opacity-30"
+      aria-label={`Mark ${name} done`}
+    >
+      ✓
+    </button>
+  )
 
   const todayPlan = view.plan.filter((p) => p.plannedOn === view.today)
   const todo = todayPlan.filter((p) => p.status === 'planned')
@@ -250,218 +259,183 @@ export default function TodayClient({ initial }: { initial: RoundsView }) {
 
   const minutes = todo.reduce((n, p) => n + p.effortMinutes, 0)
 
-  // A clock can outlive the row that started it — the chore gets done from
-  // another device, or the plan changes under it. A running timer with nowhere
-  // on screen to stop it is worse than no timer, so it gets its own strip.
+  // The running clock is one strip at the top rather than a control inside a
+  // row: it can outlive the row that started it (the chore gets done from
+  // another device, or the plan changes under it), and a timer with nowhere on
+  // screen to stop it is worse than no timer.
   const timedChore = timer ? byId.get(timer.choreId) : undefined
-  const timerOnScreen =
-    timer !== null &&
-    (todo.some((p) => p.kind === 'chore' && p.itemId === timer.choreId) ||
-      loose.some((c) => c.id === timer.choreId))
 
   return (
-    <main className="pt-6">
-      <div className="flex flex-wrap items-baseline gap-4">
-        <h1 className="text-[27px] font-semibold tracking-tight">{longDate(view.today)}</h1>
-        <p className="tnum text-[13px] text-ink-3">
-          {todo.length === 0
-            ? done.length > 0
-              ? 'Everything planned for today is done.'
-              : 'Nothing planned for today.'
-            : `${todo.length} to do · ${minutesLabel(minutes)}`}
-        </p>
-      </div>
+    <main className="mx-auto max-w-[560px] pt-5">
+      <div className="label">Rounds</div>
+      <h1 className="font-display text-[30px] leading-[1.05] font-semibold">{longDate(view.today)}</h1>
+      <p className="tnum mt-1 font-mono text-[11px] text-ink-3">
+        {todo.length === 0
+          ? done.length > 0
+            ? 'Everything planned for today is done.'
+            : 'Nothing planned for today.'
+          : `${todo.length} planned · ${minutesLabel(minutes)}`}
+        {loose.length > 0 ? ` · ${loose.length} late` : ''}
+      </p>
 
       {error ? (
-        <div className="mt-4 bg-drain-ink px-3 py-2 font-mono text-[11px] text-surface">{error}</div>
+        <div className="mt-4 rounded-lg bg-drain-ink px-3 py-2 font-mono text-[11px] text-surface">{error}</div>
       ) : null}
 
-      {timer && !timerOnScreen ? (
-        <div className="mt-4 flex flex-wrap items-center gap-3 border border-ink bg-surface px-3 py-2.5">
-          <span className="font-mono text-[9px] tracking-[0.12em] text-ink-3">TIMING</span>
-          <span className="min-w-[120px] flex-1 text-[14px]">
-            {timedChore?.name ?? 'A chore that is no longer listed'}
-          </span>
-          {timedChore ? timerControl(timedChore.id, timedChore.name) : (
+      {timer ? (
+        <div className="fill-in sticky top-2 z-20 mt-4 flex items-center justify-between gap-3 rounded-2xl bg-ink px-4 py-3 text-surface">
+          <div className="min-w-0">
+            <div className="label truncate text-surface/60">
+              Timing · {timedChore?.name ?? 'a chore that is no longer listed'}
+            </div>
+            <div className="tnum font-display text-[30px] leading-none font-medium" aria-live="polite">
+              {clockLabel(elapsed)}
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
+              disabled={pending}
               onClick={discardTimer}
-              className="shrink-0 border border-rule px-2.5 py-1 font-mono text-[10px] tracking-[0.1em] text-ink-2 hover:border-rule-strong"
+              className="px-2 font-mono text-[15px] leading-none text-surface/50 hover:text-surface disabled:opacity-40"
+              aria-label="Throw the timing away without logging it"
             >
-              DISCARD
+              ×
             </button>
-          )}
+            {timedChore ? (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={finishTimer}
+                className="rounded-full bg-drain px-4 py-2 font-mono text-[11px] font-semibold tracking-[0.08em] text-white disabled:opacity-40"
+              >
+                STOP
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
-      <section className="mt-6 border border-rule bg-surface p-5">
-        <div className="font-mono text-[9px] tracking-[0.12em] text-ink-3">TODAY</div>
+      <section className="mt-5">
+        <div className="flex items-baseline justify-between border-b border-rule pb-2">
+          <span className="label">Planned today</span>
+          <span className="label">{minutesLabel(minutes)}</span>
+        </div>
 
         {todo.length === 0 && done.length === 0 ? (
-          <div className="mt-3 border border-dashed border-rule px-4 py-8 text-center">
-            <p className="text-sm text-ink-3">
-              Nothing on the plan. That is either a good week or an unplanned one.
-            </p>
-            <Link
-              href="/rounds/plan"
-              className="mt-4 inline-block border border-ink bg-ink px-4 py-2.5 text-[13px] text-surface"
-            >
+          <div className="flex flex-col items-start gap-3 py-6">
+            <p className="text-sm text-ink-3">Nothing on the plan. That is either a good week or an unplanned one.</p>
+            <Link href="/rounds/plan" className="rounded-lg bg-ink px-4 py-2.5 text-[13px] text-surface">
               Plan the week
             </Link>
           </div>
         ) : null}
 
-        <div className="mt-3 flex flex-col gap-2">
-          {todo.map((entry) => {
-            const chore = entry.kind === 'chore' ? byId.get(entry.itemId) : undefined
-            return (
-              <div
-                key={entry.id}
-                className="flex flex-wrap items-center gap-3 border border-rule-2 px-3 py-3"
-              >
-                {/* A renewal cannot be ticked off here. Completing one needs the
-                    new expiry date off the paperwork, and a one-tap ✓ that
-                    invented that date would be the one bug that matters — so it
-                    sends you to the screen that asks. */}
-                {entry.kind === 'renewal' ? (
-                  <Link
-                    href="/rounds/renewals"
-                    className="flex h-7 w-7 shrink-0 items-center justify-center border border-rule-strong bg-surface text-[13px] leading-none text-ink-3 hover:bg-surface-2"
-                    aria-label={`Open ${entry.name} to renew it`}
-                  >
-                    →
-                  </Link>
-                ) : (
+        {todo.map((entry) => {
+          const chore = entry.kind === 'chore' ? byId.get(entry.itemId) : undefined
+          const late = chore ? lateText(chore) : null
+          return (
+            <div key={entry.id} className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2 border-b border-rule-2 py-3">
+              <div className="min-w-0">
+                <div className="text-[15px] font-medium">{entry.name}</div>
+                <div className="tnum mt-0.5 flex flex-wrap items-center gap-x-2.5 font-mono text-[10.5px] text-ink-3">
+                  <span>{minutesLabel(entry.effortMinutes)}</span>
+                  {chore ? <span>every {chore.intervalDays}d</span> : <span>renewal</span>}
+                  {late ? <span className={chore && chore.daysOverdue > 0 ? 'text-drain-ink' : ''}>{late}</span> : null}
+                  {entry.kind === 'chore' ? timeButton(entry.itemId, entry.name) : null}
                   <button
                     type="button"
-                    disabled={pending || timer?.choreId === entry.itemId}
-                    onClick={() =>
-                      dispatch(() => completeChoreAction(entry.itemId, view.today, view.weekStart))
-                    }
-                    className="h-7 w-7 shrink-0 border border-rule-strong bg-surface text-[13px] leading-none text-ink-3 hover:bg-surface-2 disabled:opacity-40"
-                    aria-label={`Mark ${entry.name} done`}
+                    disabled={pending || (entry.kind === 'chore' && timer?.choreId === entry.itemId)}
+                    onClick={() => dispatch(() => skipPlannedAction(entry.id, view.weekStart))}
+                    className="font-mono text-[10px] tracking-[0.08em] text-ink-4 hover:text-ink-2 disabled:opacity-40"
                   >
-                    ✓
+                    SKIP
                   </button>
-                )}
-
-                <span className="min-w-[140px] flex-1 text-[15px]">{entry.name}</span>
-                {entry.kind === 'renewal' ? (
-                  <span className="shrink-0 border border-rule px-1.5 py-0.5 font-mono text-[9px] tracking-[0.1em] text-ink-3">
-                    RENEWAL
-                  </span>
-                ) : null}
-                {chore ? <StateChip chore={chore} /> : null}
-                <span className="tnum w-10 shrink-0 text-right font-mono text-[11px] text-ink-3">
-                  {minutesLabel(entry.effortMinutes)}
-                </span>
-
-                {entry.kind === 'chore' ? timerControl(entry.itemId, entry.name) : null}
-
-                <button
-                  type="button"
-                  disabled={pending || (entry.kind === 'chore' && timer?.choreId === entry.itemId)}
-                  onClick={() => dispatch(() => skipPlannedAction(entry.id, view.weekStart))}
-                  className="shrink-0 px-2 py-1 font-mono text-[10px] tracking-[0.1em] text-ink-4 hover:text-ink-2 disabled:opacity-40"
-                >
-                  SKIP
-                </button>
+                </div>
               </div>
-            )
-          })}
-        </div>
+              {/* A renewal cannot be ticked off here. Completing one needs the
+                  new expiry date off the paperwork, and a one-tap ✓ that
+                  invented that date would be the one bug that matters — so it
+                  sends you to the screen that asks. */}
+              {entry.kind === 'renewal' ? (
+                <Link
+                  href="/rounds/renewals"
+                  className="row-span-2 grid size-[40px] place-items-center rounded-full border-[1.5px] border-ink-3 text-[14px] text-ink-3"
+                  aria-label={`Open ${entry.name} to renew it`}
+                >
+                  →
+                </Link>
+              ) : (
+                <div className="row-span-2">{doneButton(entry.itemId, entry.name)}</div>
+              )}
+              {chore ? <DueBar chore={chore} /> : null}
+            </div>
+          )
+        })}
 
         {done.length > 0 ? (
-          <div className="mt-4 border-t border-rule-2 pt-3">
-            <div className="font-mono text-[9px] tracking-[0.12em] text-ink-4">DONE TODAY</div>
-            <div className="mt-2 flex flex-col gap-1">
-              {done.map((entry) => (
-                <div key={entry.id} className="flex items-center gap-3 px-3 py-1.5">
-                  <span className="text-[13px] text-ink-4 line-through">{entry.name}</span>
-                  {entry.kind === 'chore' ? (
-                    <button
-                      type="button"
-                      disabled={pending}
-                      onClick={() =>
-                        dispatch(() => undoCompletionAction(entry.itemId, view.weekStart))
-                      }
-                      className="font-mono text-[10px] tracking-[0.1em] text-ink-4 hover:text-ink-2 disabled:opacity-40"
-                    >
-                      UNDO
-                    </button>
-                  ) : (
-                    <Link
-                      href="/rounds/renewals"
-                      className="font-mono text-[10px] tracking-[0.1em] text-ink-4 hover:text-ink-2"
-                    >
-                      UNDO
-                    </Link>
-                  )}
-                </div>
-              ))}
-            </div>
+          <div className="pt-2">
+            {done.map((entry) => (
+              <div key={entry.id} className="flex items-center gap-3 py-1.5">
+                <span className="grid size-[22px] place-items-center rounded-full bg-ink text-[11px] text-surface">✓</span>
+                <span className="text-[13px] text-ink-3 line-through">{entry.name}</span>
+                {entry.kind === 'chore' ? (
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => dispatch(() => undoCompletionAction(entry.itemId, view.weekStart))}
+                    className="ml-auto font-mono text-[10px] tracking-[0.08em] text-ink-4 hover:text-ink-2 disabled:opacity-40"
+                  >
+                    UNDO
+                  </button>
+                ) : (
+                  <Link href="/rounds/renewals" className="ml-auto font-mono text-[10px] tracking-[0.08em] text-ink-4 hover:text-ink-2">
+                    UNDO
+                  </Link>
+                )}
+              </div>
+            ))}
           </div>
         ) : null}
       </section>
 
       {loose.length > 0 ? (
-        <section className="mt-5 border border-drain-fill bg-surface p-5">
-          <div className="flex items-baseline justify-between">
-            <div className="font-mono text-[9px] tracking-[0.12em] text-drain-ink">
-              OVERDUE · NOT PLANNED
-            </div>
-            <Link
-              href="/rounds/plan"
-              className="font-mono text-[10px] tracking-[0.1em] text-ink-3 hover:text-ink"
-            >
-              PLAN THESE →
+        <section className="mt-7">
+          <div className="flex items-baseline justify-between border-b border-rule pb-2">
+            <span className="label text-drain-ink">Late, not planned</span>
+            <Link href="/rounds/plan" className="label hover:text-ink">
+              Plan these →
             </Link>
           </div>
-
-          <div className="mt-3 flex flex-col gap-2">
-            {loose.map((chore) => (
-              <div
-                key={chore.id}
-                className="flex flex-wrap items-center gap-3 border border-rule-2 px-3 py-2.5"
-              >
-                <span className="min-w-[140px] flex-1 text-[14px]">{chore.name}</span>
-                <StateChip chore={chore} />
-                <span className="tnum w-10 shrink-0 text-right font-mono text-[11px] text-ink-3">
-                  {minutesLabel(chore.effortMinutes)}
-                </span>
-                {timerControl(chore.id, chore.name)}
-                <button
-                  type="button"
-                  disabled={pending || timer?.choreId === chore.id}
-                  onClick={() =>
-                    dispatch(() => completeChoreAction(chore.id, view.today, view.weekStart))
-                  }
-                  className="shrink-0 border border-rule px-2.5 py-1 font-mono text-[10px] tracking-[0.1em] text-ink-2 hover:border-rule-strong disabled:opacity-40"
-                >
-                  DID IT
-                </button>
+          {loose.map((chore) => (
+            <div key={chore.id} className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2 border-b border-rule-2 py-3">
+              <div className="min-w-0">
+                <div className="text-[15px] font-medium">{chore.name}</div>
+                <div className="tnum mt-0.5 flex flex-wrap items-center gap-x-2.5 font-mono text-[10.5px] text-ink-3">
+                  <span>{minutesLabel(chore.effortMinutes)}</span>
+                  <span>every {chore.intervalDays}d</span>
+                  <span className="text-drain-ink">{lateText(chore)}</span>
+                  {timeButton(chore.id, chore.name)}
+                </div>
               </div>
-            ))}
-          </div>
+              <div className="row-span-2">{doneButton(chore.id, chore.name)}</div>
+              <DueBar chore={chore} />
+            </div>
+          ))}
         </section>
       ) : null}
 
       {soon.length > 0 ? (
-        <section className="mt-5 border border-rule bg-surface p-5">
-          <div className="font-mono text-[9px] tracking-[0.12em] text-ink-3">COMING UP</div>
-          <div className="mt-3 flex flex-col">
-            {soon.slice(0, 8).map((chore) => (
-              <div
-                key={chore.id}
-                className="flex items-center gap-3 border-b border-rule-2 py-2 last:border-b-0"
-              >
-                <span className="flex-1 text-[14px] text-ink-2">{chore.name}</span>
-                <span className="tnum font-mono text-[11px] text-ink-3">
-                  {dueLabel(chore.daysOverdue)}
-                </span>
-              </div>
-            ))}
+        <section className="mt-7">
+          <div className="border-b border-rule pb-2">
+            <span className="label">Coming up</span>
           </div>
+          {soon.slice(0, 8).map((chore) => (
+            <div key={chore.id} className="flex items-center gap-3 border-b border-rule-2 py-2.5 last:border-b-0">
+              <span className="flex-1 text-[14px] text-ink-2">{chore.name}</span>
+              <span className="tnum font-mono text-[10.5px] text-ink-3">{dueLabel(chore.daysOverdue).toLowerCase()}</span>
+            </div>
+          ))}
         </section>
       ) : null}
     </main>
