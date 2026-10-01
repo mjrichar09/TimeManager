@@ -368,15 +368,26 @@ export async function suggestForWeek(start: string): Promise<SuggestedWeek> {
       preferWeekend: item.preferWeekend,
     }))
 
+  // What the saved plan already holds, per day. Without this the suggester
+  // filled every day to capacity and the saved items were added on top, so
+  // "Suggest again" on a saved week overflowed every day it touched.
+  const reservedMinutes = Array.from({ length: 7 }, (_, i) =>
+    existing
+      .filter((p) => p.status !== 'skipped' && p.plannedOn === addDays(start, i))
+      .reduce((n, p) => n + p.effortMinutes, 0)
+  )
+
   const suggestion = suggestWeek({
     weekStart: start,
     today,
     dayMinutes: settings.dayMinutes,
+    reservedMinutes,
     candidates,
   })
 
   // Fold what is already planned back in, so the screen shows the real week
-  // rather than only the new proposals, and the day totals stay honest.
+  // rather than only the new proposals. Its minutes are already counted in each
+  // day's total through reservedMinutes.
   for (const entry of existing) {
     if (entry.status === 'skipped') continue
     const day = suggestion.days.find((d) => d.date === entry.plannedOn)
@@ -388,8 +399,6 @@ export async function suggestForWeek(start: string): Promise<SuggestedWeek> {
       dueOn: entry.dueOn,
       late: dayNumber(entry.plannedOn) > dayNumber(entry.dueOn),
     })
-    day.usedMinutes += entry.effortMinutes
-    suggestion.totalMinutes += entry.effortMinutes
   }
 
   for (const day of suggestion.days) {

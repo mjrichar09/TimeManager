@@ -87,6 +87,13 @@ export type SuggestInput = {
   today: string
   /** Minutes available per weekday, Monday first. */
   dayMinutes: number[]
+  /**
+   * Minutes already committed on each day, Monday first: what an existing plan
+   * has on the board. The suggester fills only the time that's left, so
+   * re-suggesting a saved week tops it up instead of planning a second full week
+   * on top of the first.
+   */
+  reservedMinutes?: number[]
   candidates: Candidate[]
 }
 
@@ -127,7 +134,7 @@ export function suggestWeek(input: SuggestInput): SuggestedWeek {
     date: isoDate(start + i),
     weekday: i,
     capacityMinutes: capacity[i],
-    usedMinutes: 0,
+    usedMinutes: Math.max(0, input.reservedMinutes?.[i] ?? 0),
     items: [],
   }))
 

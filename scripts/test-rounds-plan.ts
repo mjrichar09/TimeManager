@@ -149,5 +149,23 @@ console.log('\nload is spread rather than front-loaded')
   check('three chores land on three different days', used === 3, `${used} day(s)`)
 }
 
+console.log('\na saved plan is topped up, not planned over')
+{
+  // Monday and Tuesday are already full from a saved plan; Wednesday has 10
+  // minutes left. Re-suggesting must not overfill any of them.
+  const plan = suggestWeek({
+    weekStart: MONDAY,
+    today: MONDAY,
+    dayMinutes: [30, 30, 30, 0, 0, 0, 0],
+    reservedMinutes: [30, 30, 20, 0, 0, 0, 0],
+    candidates: [chore('a', 20, MONDAY), chore('b', 10, MONDAY)],
+  })
+  const over = plan.days.filter((d) => d.usedMinutes > d.capacityMinutes)
+  check('no day ends over its capacity', over.length === 0, over.map((d) => d.date).join(', '))
+  check('the 10-minute chore takes the 10 minutes left', dayOf(plan, 'b') === addDays(MONDAY, 2), String(dayOf(plan, 'b')))
+  check('the 20-minute chore is reported as not fitting', plan.unplanned.some((u) => u.itemId === 'a'))
+  check('the week total counts the saved minutes', plan.totalMinutes === 90, String(plan.totalMinutes))
+}
+
 console.log(failures === 0 ? '\nAll checks passed.\n' : `\n${failures} check(s) failed.\n`)
 process.exit(failures === 0 ? 0 : 1)
