@@ -70,12 +70,11 @@ export default function DayDial({
 
   return (
     <svg
-      width={SIZE}
-      height={SIZE}
       viewBox={`${-PAD} ${-PAD} ${SIZE + PAD * 2} ${SIZE + PAD * 2}`}
       role="img"
       aria-label="Today as a 24-hour dial"
-      className="block max-w-full"
+      // Grows into a tall phone's spare height, never past the screen's width.
+      className="block aspect-square h-auto w-[min(330px,84vw,42dvh)]"
     >
       <defs>
         <pattern

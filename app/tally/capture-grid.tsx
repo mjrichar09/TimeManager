@@ -261,7 +261,7 @@ export default function CaptureGrid({
                 <span className="mx-auto max-w-[150px] font-display text-[16px] leading-tight font-semibold">
                   {open.name}
                 </span>
-                <span className="tnum font-display text-[46px] leading-none font-medium tracking-[-0.02em]">
+                <span className="tnum font-display text-[clamp(38px,12vw,52px)] leading-none font-medium tracking-[-0.02em]">
                   {stopwatch(open.startedAt, now)}
                 </span>
                 <span className="tnum font-mono text-[10.5px] text-ink-3">

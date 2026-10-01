@@ -41,8 +41,13 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`${plexSans.variable} ${plexCondensed.variable} ${plexMono.variable} font-sans`}>{children}</body>
+    // The font variables go on <html>, not <body>. Tailwind declares
+    // --font-sans on :root as var(--font-plex-sans), and a custom property is
+    // resolved where it is declared — so with the variables one level down,
+    // :root saw nothing, --font-sans went invalid and every screen fell back to
+    // the system face.
+    <html lang="en" className={`${plexSans.variable} ${plexCondensed.variable} ${plexMono.variable}`}>
+      <body className="font-sans">{children}</body>
     </html>
   )
 }
