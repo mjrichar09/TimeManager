@@ -18,6 +18,12 @@ It replies with a sentence built for a notification:
 "Deep work started. Meetings closed at 47m."
 ```
 
+Send `{ "category": "pause" }` to stop logging: the open block closes and
+nothing opens until the next tap, so that stretch stays unlogged and reconcile
+shows it as a gap. It replies `"Paused. Deep work closed at 47m."`, or
+`"Already paused."` if nothing was running. Worth a home-screen slot for the
+stretches you don't want to track.
+
 Tapping the same category twice does nothing the second time — it returns
 `"Deep work already running."` and writes nothing, so a fumbled double-tap can't
 split one block into two.

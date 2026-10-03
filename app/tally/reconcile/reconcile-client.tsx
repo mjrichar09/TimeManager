@@ -10,6 +10,7 @@ import {
   fillGapAction,
   loadDayAction,
   moveEdgeAction,
+  pauseAction,
   recategorizeAction,
   splitBlockAction,
   type ActionResult,
@@ -525,17 +526,30 @@ export default function ReconcileClient({ categories }: { categories: Category[]
               >
                 Split at {clock(split)}
               </button>
-              <span className="text-[11.5px] text-ink-3">Tap the tape to move the split</span>
-              {!current.running ? (
+              <span className="text-[11.5px] text-ink-3">Tap the tape to move it</span>
+              <span className="ml-auto flex items-center">
+                {current.live ? (
+                  // End the running block now; what follows stays unlogged.
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => dispatch(() => pauseAction(window))}
+                    className="px-2 py-2 text-[12.5px] font-medium text-ink-2 disabled:opacity-40"
+                  >
+                    Pause now
+                  </button>
+                ) : null}
+                {/* Deleting leaves the stretch as a gap, running block included:
+                    nothing is open afterwards until the next capture tap. */}
                 <button
                   type="button"
                   disabled={pending}
                   onClick={() => dispatch(() => deleteBlockAction(window, current.id!))}
-                  className="ml-auto px-2 py-2 text-[12.5px] font-medium text-drain-ink disabled:opacity-40"
+                  className="px-2 py-2 text-[12.5px] font-medium text-drain-ink disabled:opacity-40"
                 >
                   Delete
                 </button>
-              ) : null}
+              </span>
             </div>
           ) : (
             <p className="text-[11.5px] text-ink-3">

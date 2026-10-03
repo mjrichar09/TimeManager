@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { SESSION_COOKIE, sessionIsValid } from '@/lib/auth'
-import { switchTo, UnknownCategoryError, type SwitchSource } from '@/lib/switch'
+import { PAUSE_SLUG, pauseLogging, switchTo, UnknownCategoryError, type SwitchSource } from '@/lib/switch'
 import { cookies } from 'next/headers'
 
 /**
@@ -10,6 +10,7 @@ import { cookies } from 'next/headers'
  *   or a valid session cookie                (the PWA)
  *
  *   Body: { "category": "deep-work" }  — a slug
+ *         { "category": "pause" }      — stop logging; nothing opens until the next tap
  *   Also accepts form-encoded `category`, so a shortcut app that can only post
  *   a form still works.
  *
@@ -73,6 +74,14 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (category === PAUSE_SLUG) {
+      const result = await pauseLogging()
+      const message = !result.paused
+        ? 'Already paused.'
+        : `Paused. ${result.closed!.name} closed at ${result.closed!.minutes}m.`
+      return NextResponse.json({ ...result, now: null, message })
+    }
+
     const result = await switchTo(category, source)
 
     // A shortcut shows this string in a notification, so it has to read well on

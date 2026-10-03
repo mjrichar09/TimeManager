@@ -14,7 +14,7 @@ import {
   splitBlock,
   splitOpenBlock,
 } from '@/lib/edits'
-import { openBlockId } from '@/lib/switch'
+import { openBlockId, pauseLogging } from '@/lib/switch'
 
 /**
  * Server actions for the reconcile and daily-check screens.
@@ -85,6 +85,14 @@ export async function shiftOpenStartAction(
     const id = await openBlockId()
     if (!id) throw new EditError('Nothing is running')
     await moveEdge(id, 'start', deltaMinutes)
+  })
+}
+
+/** Stop the running block now and leave what follows unlogged. */
+export async function pauseAction(window: Window): Promise<ActionResult> {
+  return run(window, async () => {
+    const result = await pauseLogging()
+    if (!result.paused) throw new EditError('Nothing is running')
   })
 }
 

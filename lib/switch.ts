@@ -136,3 +136,39 @@ export async function openBlockId(): Promise<string | null> {
   `) as Array<{ id: string }>
   return rows[0]?.id ?? null
 }
+
+/** The slug a shortcut or the keypad sends to stop logging. Not a category. */
+export const PAUSE_SLUG = 'pause'
+
+export type PauseResult = {
+  ok: true
+  /** False when nothing was running, so nothing was written. */
+  paused: boolean
+  closed: { name: string; minutes: number } | null
+}
+
+/**
+ * Stop logging: close whatever is open and open nothing.
+ *
+ * The time from here until the next tap stays unlogged, and reconcile shows it as
+ * a gap. That is the honest record of "I didn't feel like tracking this", and it
+ * beats a category invented to fill the hole.
+ *
+ * Idempotent like switchTo: pausing while already paused writes nothing.
+ */
+export async function pauseLogging(): Promise<PauseResult> {
+  const sql = getSql()
+  const rows = (await sql`
+    update blocks b set ended_at = now()
+    from categories c
+    where b.user_id = ${userId()} and b.ended_at is null and c.id = b.category_id
+    returning c.name, extract(epoch from (b.ended_at - b.started_at)) / 60.0 as minutes
+  `) as Array<{ name: string; minutes: string | number }>
+
+  if (rows.length === 0) return { ok: true, paused: false, closed: null }
+  return {
+    ok: true,
+    paused: true,
+    closed: { name: rows[0].name, minutes: Math.round(Number(rows[0].minutes)) },
+  }
+}

@@ -74,7 +74,7 @@ export default function DayDial({
       role="img"
       aria-label="Today as a 24-hour dial"
       // Grows into a tall phone's spare height, never past the screen's width.
-      className="block aspect-square h-auto w-[min(330px,84vw,42dvh)]"
+      className="block aspect-square h-auto w-[min(330px,84vw,36dvh)] [@media(max-height:700px)]:w-[min(330px,84vw,27dvh)]"
     >
       <defs>
         <pattern

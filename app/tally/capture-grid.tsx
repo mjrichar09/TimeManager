@@ -22,6 +22,7 @@ export type Tile = {
 type Flash =
   | { kind: 'closed'; text: string }
   | { kind: 'moved'; text: string }
+  | { kind: 'paused'; text: string }
   | { kind: 'error'; text: string }
   | null
 
@@ -194,6 +195,36 @@ export default function CaptureGrid({
     shiftTimer.current = setTimeout(() => void flushShift(), SHIFT_SETTLE_MS)
   }
 
+  // Stop logging without starting anything else. The time until the next tap
+  // stays unlogged and shows on the dial as a gap, which is the honest record of
+  // a stretch you didn't want to track.
+  const pause = useCallback(async () => {
+    if (!open || pending) return
+    if (shiftTotal.current) await flushShift()
+    const previous = open
+    const stamp = new Date().toISOString()
+    setPending('pause')
+    setOpen(null)
+    setTiles((list) => list.map((t) => (t.slug === previous.slug ? { ...t, lastUsed: stamp } : t)))
+    if (navigator.vibrate) navigator.vibrate(12)
+    try {
+      const response = await fetch('/api/switch', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ category: 'pause' }),
+      })
+      const data = await response.json()
+      if (!response.ok || !data.ok) throw new Error(data?.error ?? `HTTP ${response.status}`)
+      if (data.closed) showFlash({ kind: 'paused', text: `${data.closed.name} · ${data.closed.minutes}m` }, 1800)
+      void refreshDay()
+    } catch {
+      setOpen(previous)
+      showFlash({ kind: 'error', text: 'Not paused — tap again' }, 5000)
+    } finally {
+      setPending(null)
+    }
+  }, [open, pending, flushShift, showFlash, refreshDay])
+
   const tap = useCallback(
     async (tile: Tile) => {
       if (tile.slug === open?.slug || pending) return
@@ -291,12 +322,18 @@ export default function CaptureGrid({
     setSplitAt(next)
   }
 
+  // While paused, the gap since the last block ended. The day's last segment is
+  // that gap when nothing is running.
+  const lastSeg = day?.segments[day.segments.length - 1]
+  const pausedSince =
+    !open && lastSeg?.kind === 'gap' ? new Date(lastSeg.startedAt).getTime() : null
+
   const dayStart = new Date(new Date(now).getFullYear(), new Date(now).getMonth(), new Date(now).getDate()).getTime()
   const unlogged = day?.gapMinutes ?? 0
 
   return (
     <main className="flex flex-1 flex-col">
-      <header className="relative flex flex-1 flex-col px-5 pt-5 pb-3">
+      <header className="relative flex flex-1 flex-col px-5 pt-4 pb-2">
         <div className="flex items-baseline justify-between">
           <span className="label">
             {mounted ? new Date(now).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }) : ''}
@@ -332,9 +369,17 @@ export default function CaptureGrid({
               </>
             ) : (
               <>
-                <span className="label">Nothing open</span>
-                <span className="font-display text-[22px] font-semibold">Tally</span>
-                <span className="font-mono text-[10.5px] text-ink-3">Tap what you&rsquo;re doing</span>
+                <span className="label">{pausedSince ? 'Paused' : 'Nothing open'}</span>
+                {pausedSince ? (
+                  <span className="tnum font-display text-[clamp(38px,12vw,52px)] leading-none font-medium tracking-[-0.02em] text-ink-3">
+                    {stopwatch(new Date(pausedSince).toISOString(), now)}
+                  </span>
+                ) : (
+                  <span className="font-display text-[22px] font-semibold">Tally</span>
+                )}
+                <span className="font-mono text-[10.5px] text-ink-3">
+                  {pausedSince ? `unlogged since ${clockLabel(pausedSince)}` : 'Tap what you\u2019re doing'}
+                </span>
               </>
             )}
           </div>
@@ -377,7 +422,13 @@ export default function CaptureGrid({
           >
             <span>{flash.text}</span>
             <span className="opacity-60">
-              {flash.kind === 'error' ? 'FAILED' : flash.kind === 'moved' ? 'SAVED' : 'CLOSED'}
+              {flash.kind === 'error'
+                ? 'FAILED'
+                : flash.kind === 'moved'
+                  ? 'SAVED'
+                  : flash.kind === 'paused'
+                    ? 'PAUSED'
+                    : 'CLOSED'}
             </span>
           </div>
         ) : null}
@@ -492,7 +543,7 @@ export default function CaptureGrid({
               type="button"
               onClick={() => tap(tile)}
               disabled={isOpen}
-              className={`relative flex min-h-[64px] flex-col justify-between gap-1.5 py-2.5 pr-2.5 pl-[14px] text-left transition-colors duration-100 ${
+              className={`relative flex min-h-[56px] flex-col justify-between gap-1 py-2 pr-2.5 pl-[14px] [@media(max-height:700px)]:min-h-[48px] [@media(max-height:700px)]:py-1.5 text-left transition-colors duration-100 ${
                 isOpen
                   ? 'fill-in bg-ink text-surface'
                   : tile.isQuick
@@ -514,6 +565,21 @@ export default function CaptureGrid({
             </button>
           )
         })}
+        <button
+          type="button"
+          onClick={pause}
+          disabled={!open || !!pending}
+          className="relative col-span-3 flex min-h-[44px] items-center justify-between bg-ground py-2.5 pr-4 pl-[14px] text-left text-ink-2 active:bg-surface-2 disabled:text-ink-4"
+        >
+          <span aria-hidden className="gap-hatch absolute top-2 bottom-2 left-0 w-[3px] rounded-r-[2px]" />
+          <span className="flex items-center gap-2.5 text-[13px] font-medium">
+            <span aria-hidden className="font-mono text-[11px] tracking-[-0.1em]">❚❚</span>
+            {open ? 'Pause logging' : 'Paused'}
+          </span>
+          <span className="font-mono text-[9.5px] text-ink-3">
+            {open ? 'leave this time unlogged' : 'tap a category to resume'}
+          </span>
+        </button>
       </div>
     </main>
   )
