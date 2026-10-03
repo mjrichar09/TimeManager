@@ -71,7 +71,15 @@ const snap = (t: number) => Math.round(t / (SNAP * MINUTE)) * SNAP * MINUTE
 
 /** A held handle. The zoom window is frozen with it, so the ground under your
  * finger doesn't rescale as the block you're dragging changes length. */
-type Drag = { edge: 'start' | 'end'; original: number; value: number; range: [number, number] }
+type Drag = {
+  edge: 'start' | 'end'
+  original: number
+  value: number
+  range: [number, number]
+  /** Let go and saving: the edge stays where it was dropped until the save lands,
+   * rather than snapping back to its old place for a beat and then jumping. */
+  released?: boolean
+}
 
 export default function ReconcileClient({ categories }: { categories: Category[] }) {
   const params = useSearchParams()
@@ -82,6 +90,9 @@ export default function ReconcileClient({ categories }: { categories: Category[]
   const [splitAt, setSplitAt] = useState<number | null>(null)
   const [fillUntil, setFillUntil] = useState<number | null>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
+  // The zoom window last used for a drag. It is kept while the same block stays
+  // selected and still fits, so a save doesn't re-centre the tape under you.
+  const [sticky, setSticky] = useState<[number, number] | null>(null)
   const [pending, startTransition] = useTransition()
   const tapeRef = useRef<HTMLDivElement>(null)
 
@@ -93,11 +104,12 @@ export default function ReconcileClient({ categories }: { categories: Category[]
   }, [])
 
   const dispatch = useCallback(
-    (work: () => Promise<ActionResult>, onSuccess?: () => void) => {
+    (work: () => Promise<ActionResult>, onSuccess?: () => void, onSettled?: () => void) => {
       startTransition(async () => {
         const result = await work()
         apply(result)
         if (result.ok) onSuccess?.()
+        onSettled?.()
       })
     },
     [apply]
@@ -117,6 +129,7 @@ export default function ReconcileClient({ categories }: { categories: Category[]
       }
       setSplitAt(null)
       setFillUntil(null)
+      setSticky(null)
       apply(result)
     })
     return () => {
@@ -128,6 +141,7 @@ export default function ReconcileClient({ categories }: { categories: Category[]
     setSelected(index)
     setSplitAt(null)
     setFillUntil(null)
+    setSticky(null)
   }
 
   if (!day) {
@@ -161,6 +175,12 @@ export default function ReconcileClient({ categories }: { categories: Category[]
   // ---- the zoom window around the selection ----
   const range: [number, number] = (() => {
     if (drag) return drag.range
+    if (sticky && segStart >= sticky[0]) {
+      // The running block ends at "now", which moves on between saves, so its
+      // window follows the clock rather than being dropped and re-centred.
+      if (current?.live) return [sticky[0], Math.max(sticky[1], dayTo)]
+      if (segEnd <= sticky[1]) return sticky
+    }
     const len = segEnd - segStart
     const pad = Math.max(30 * MINUTE, len * 0.45)
     let a = segStart - pad
@@ -193,15 +213,16 @@ export default function ReconcileClient({ categories }: { categories: Category[]
 
   // ---- dragging a handle ----
   const beginDrag = (edge: 'start' | 'end', original: number) => (event: React.PointerEvent) => {
-    if (pending) return
+    if (pending || drag) return
     event.preventDefault()
     event.stopPropagation()
     ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+    setSticky(range)
     setDrag({ edge, original, value: original, range })
   }
 
   const moveDrag = (event: React.PointerEvent) => {
-    if (!drag) return
+    if (!drag || drag.released) return
     let t = snap(timeAt(event.clientX))
     // Keep at least five minutes of the block, and never past the window.
     if (drag.edge === 'start') t = Math.min(t, (isGap ? segEnd : shownEnd) - SNAP * MINUTE)
@@ -225,18 +246,26 @@ export default function ReconcileClient({ categories }: { categories: Category[]
   }
 
   const endDrag = () => {
-    if (!drag || !current) return
+    if (!drag || drag.released || !current) return
     const finished = drag
-    setDrag(null)
-    const delta = Math.round((finished.value - finished.original) / MINUTE)
-    if (delta === 0) return
-    if (isGap) {
+    // Rounded up, not to nearest: block starts carry seconds (12:41:40), and the
+    // server moves the edge by whole minutes from there. Rounding up lands it in
+    // the minute the handle showed; rounding to nearest could land a minute short
+    // and the label would tick back as the save arrived.
+    const delta = Math.ceil((finished.value - finished.original) / MINUTE)
+    if (delta === 0 || isGap) {
+      setDrag(null)
       // On a gap the handle doesn't move anything yet — it chooses how much of
       // the gap the next category tap will fill.
-      setFillUntil(finished.value)
+      if (delta !== 0) setFillUntil(finished.value)
       return
     }
-    dispatch(() => moveEdgeAction(window, current.id!, finished.edge, delta))
+    setDrag({ ...finished, released: true })
+    dispatch(
+      () => moveEdgeAction(window, current.id!, finished.edge, delta),
+      undefined,
+      () => setDrag(null)
+    )
   }
 
   const tapTape = (event: React.MouseEvent) => {
@@ -439,7 +468,9 @@ export default function ReconcileClient({ categories }: { categories: Category[]
           </div>
 
           <div className="label">{isGap ? 'Fill with' : 'Recategorise'}</div>
-          <div className="no-scrollbar -mx-5 flex gap-1.5 overflow-x-auto px-5 pb-1">
+          {/* A grid, not a scrolling row: every category is one glance and one
+              tap away, in the same order as the Capture keypad. */}
+          <div className="grid grid-cols-3 gap-1.5">
             {categories.map((category) => {
               const active = !isGap && category.slug === current.slug
               return (
@@ -459,11 +490,15 @@ export default function ReconcileClient({ categories }: { categories: Category[]
                         : recategorizeAction(window, current.id!, category.slug)
                     )
                   }
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium disabled:opacity-100 ${
-                    active ? 'border-ink bg-ink text-surface' : 'border-rule bg-surface text-ink-2'
+                  className={`relative min-h-[40px] overflow-hidden rounded-lg border py-2 pr-2 pl-3 text-left text-[12px] leading-tight font-medium disabled:opacity-100 ${
+                    active ? 'border-ink bg-ink text-surface' : 'border-rule bg-surface text-ink active:bg-surface-2'
                   }`}
                 >
-                  <span className="size-[7px] rounded-full" style={{ background: energyColor(category.energy) }} />
+                  <span
+                    aria-hidden
+                    className="absolute top-2 bottom-2 left-0 w-[3px] rounded-r-[2px]"
+                    style={{ background: energyColor(category.energy) }}
+                  />
                   {category.name}
                 </button>
               )

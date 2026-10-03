@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition } from 'react'
 import type { Day } from '@/lib/day'
 import type { OpenBlock } from '@/lib/switch'
-import { loadDayAction, splitOpenAction } from './actions'
+import { loadDayAction, shiftOpenStartAction, splitOpenAction } from './actions'
 import DayDial from './day-dial'
 
 /** Past this, the app is allowed to interrupt once and ask (build-plan §5). */
@@ -21,8 +21,12 @@ export type Tile = {
 
 type Flash =
   | { kind: 'closed'; text: string }
+  | { kind: 'moved'; text: string }
   | { kind: 'error'; text: string }
   | null
+
+/** How long after the last ±5 tap the shift is saved, so three taps are one edit. */
+const SHIFT_SETTLE_MS = 800
 
 function todayWindow() {
   const local = new Date()
@@ -100,6 +104,13 @@ export default function CaptureGrid({
   const [splitSlug, setSplitSlug] = useState<string | null>(null)
   const [splitPending, startSplit] = useTransition()
 
+  // "I switched ten minutes ago": ±5 taps move the open block's start at once on
+  // screen and are saved together once the taps stop.
+  const [shift, setShift] = useState(0)
+  const shiftTotal = useRef(0)
+  const shiftBase = useRef<string | null>(null)
+  const shiftTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // The dial is a live clock, so it has to tick on its own.
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000)
@@ -134,9 +145,60 @@ export default function CaptureGrid({
     flashTimer.current = setTimeout(() => setFlash(null), ms)
   }, [])
 
+  const flushShift = useCallback(async () => {
+    if (shiftTimer.current) clearTimeout(shiftTimer.current)
+    shiftTimer.current = null
+    const delta = shiftTotal.current
+    const base = shiftBase.current
+    shiftTotal.current = 0
+    shiftBase.current = null
+    setShift(0)
+    if (!delta || !base) return
+
+    const result = await shiftOpenStartAction(todayWindow(), delta)
+    if (result.day) setDay(result.day)
+    if (result.ok) {
+      const at = new Date(new Date(base).getTime() + delta * 60000)
+      showFlash({ kind: 'moved', text: `Started ${Math.abs(delta)}m ${delta < 0 ? 'earlier' : 'later'} · ${clockLabel(at.getTime())}` }, 1800)
+    } else {
+      // Put the clock back where the server still has it.
+      setOpen((o) => (o ? { ...o, startedAt: base } : o))
+      showFlash({ kind: 'error', text: result.error }, 5000)
+    }
+  }, [showFlash])
+
+  // Leaving the screen inside the settle window still saves the shift.
+  useEffect(() => () => {
+    if (shiftTotal.current) void shiftOpenStartAction(todayWindow(), shiftTotal.current)
+  }, [])
+
+  const nudgeStart = (deltaMinutes: number) => {
+    if (!open || pending) return
+    const current = new Date(open.startedAt).getTime()
+    const next = current + deltaMinutes * 60000
+    // Not into the future, and not through the whole of the block before it.
+    if (next > Date.now() - 60000) return
+    const segs = day?.segments ?? []
+    const liveAt = segs.findIndex((x) => x.live)
+    const prevBlock = liveAt > 0 ? segs.slice(0, liveAt).reverse().find((x) => x.kind === 'block') : undefined
+    if (deltaMinutes < 0 && prevBlock && next < new Date(prevBlock.startedAt).getTime() + 60000) {
+      showFlash({ kind: 'error', text: `That would swallow ${prevBlock.name}` }, 2600)
+      return
+    }
+    if (shiftBase.current === null) shiftBase.current = open.startedAt
+    setOpen({ ...open, startedAt: new Date(next).toISOString() })
+    shiftTotal.current += deltaMinutes
+    setShift(shiftTotal.current)
+    if (navigator.vibrate) navigator.vibrate(8)
+    if (shiftTimer.current) clearTimeout(shiftTimer.current)
+    shiftTimer.current = setTimeout(() => void flushShift(), SHIFT_SETTLE_MS)
+  }
+
   const tap = useCallback(
     async (tile: Tile) => {
       if (tile.slug === open?.slug || pending) return
+      // A shift still waiting to save belongs to the block being closed now.
+      if (shiftTotal.current) await flushShift()
 
       const previous = open
       const previousTiles = tiles
@@ -178,7 +240,7 @@ export default function CaptureGrid({
         setPending(null)
       }
     },
-    [open, pending, tiles, showFlash, refreshDay]
+    [open, pending, tiles, showFlash, refreshDay, flushShift]
   )
 
   const openTile = open ? tiles.find((t) => t.slug === open.slug) : undefined
@@ -278,6 +340,34 @@ export default function CaptureGrid({
           </div>
         </div>
 
+        {/* Caught the switch late? Move the start back without leaving the
+            screen. The block before it gives up the same minutes. */}
+        {mounted && open ? (
+          <div className="mx-auto mb-1 flex items-center gap-3">
+            <button
+              type="button"
+              disabled={!!pending}
+              onClick={() => nudgeStart(-5)}
+              aria-label="It started 5 minutes earlier"
+              className="h-10 min-w-[64px] rounded-full border border-rule-strong px-3 font-mono text-[12px] font-medium text-ink active:bg-surface-2 disabled:opacity-40"
+            >
+              −5m
+            </button>
+            <span className={`label w-[92px] text-center ${shift ? 'text-charge' : ''}`} aria-live="polite">
+              {shift ? `Start ${shift > 0 ? '+' : '−'}${Math.abs(shift)}m` : 'Started earlier?'}
+            </span>
+            <button
+              type="button"
+              disabled={!!pending}
+              onClick={() => nudgeStart(5)}
+              aria-label="It started 5 minutes later"
+              className="h-10 min-w-[64px] rounded-full border border-rule-strong px-3 font-mono text-[12px] font-medium text-ink active:bg-surface-2 disabled:opacity-40"
+            >
+              +5m
+            </button>
+          </div>
+        ) : null}
+
         {flash ? (
           <div
             className={`fill-in absolute inset-x-4 top-3 z-10 flex items-center justify-between gap-3 rounded-xl px-4 py-3 font-mono text-xs ${
@@ -286,7 +376,9 @@ export default function CaptureGrid({
             role="status"
           >
             <span>{flash.text}</span>
-            <span className="opacity-60">{flash.kind === 'error' ? 'FAILED' : 'CLOSED'}</span>
+            <span className="opacity-60">
+              {flash.kind === 'error' ? 'FAILED' : flash.kind === 'moved' ? 'SAVED' : 'CLOSED'}
+            </span>
           </div>
         ) : null}
 

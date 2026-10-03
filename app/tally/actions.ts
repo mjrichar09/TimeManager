@@ -14,6 +14,7 @@ import {
   splitBlock,
   splitOpenBlock,
 } from '@/lib/edits'
+import { openBlockId } from '@/lib/switch'
 
 /**
  * Server actions for the reconcile and daily-check screens.
@@ -69,6 +70,22 @@ export async function recategorizeAction(
   slug: string
 ): Promise<ActionResult> {
   return run(window, () => recategorize(blockId, slug))
+}
+
+/**
+ * Move the running block's start, for "I switched ten minutes ago" from the
+ * capture screen. The previous block's end follows, exactly as a dragged edge
+ * does in reconcile, so the day stays seamless.
+ */
+export async function shiftOpenStartAction(
+  window: Window,
+  deltaMinutes: number
+): Promise<ActionResult> {
+  return run(window, async () => {
+    const id = await openBlockId()
+    if (!id) throw new EditError('Nothing is running')
+    await moveEdge(id, 'start', deltaMinutes)
+  })
 }
 
 export async function moveEdgeAction(

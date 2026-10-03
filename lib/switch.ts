@@ -125,3 +125,14 @@ export async function currentOpenBlock(): Promise<OpenBlock | null> {
     startedAt: new Date(rows[0].started_at).toISOString(),
   }
 }
+
+/** The running block's id, for edits that act on "whatever is open now". */
+export async function openBlockId(): Promise<string | null> {
+  const sql = getSql()
+  const rows = (await sql`
+    select id from blocks
+    where user_id = ${userId()} and ended_at is null
+    limit 1
+  `) as Array<{ id: string }>
+  return rows[0]?.id ?? null
+}
