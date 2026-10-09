@@ -49,5 +49,7 @@ design/tally-screens.html
 # repair backups: the previous state of any row a repair script rewrote
 /db/repairs/
 
-# demo reel takes and videos (scripts/reel)
-/.reel/
+# demo reel working files (scripts/reel). The finished videos in .reel/out are
+# committed; the raw takes (thousands of frames) and build files are not.
+/.reel/raw/
+/.reel/build/

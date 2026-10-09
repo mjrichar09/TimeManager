@@ -4,8 +4,9 @@ Scripts that record and assemble the Tally & Rounds demo reel: a 16:9 master
 for X and Reddit and a 1:1 cut, with captions burned in. Every take is scripted,
 so the reel can be re-shot after a UI change without redoing it by hand.
 
-Outputs go to `.reel/` at the repo root (git-ignored). The videos show real data,
-so they stay out of git.
+Outputs go to `.reel/` at the repo root. The finished videos in `.reel/out/` are
+committed, so the latest cut lives with the code. The raw takes (about 130 MB of
+frames) and build files are git-ignored.
 
 ## What it needs
 

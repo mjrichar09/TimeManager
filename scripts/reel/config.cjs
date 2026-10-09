@@ -7,7 +7,7 @@ const path = require('path')
 
 const ROOT = path.resolve(__dirname, '../..')
 
-/** Where takes, build files and the finished videos go. Git-ignored. */
+/** Where takes, build files and the finished videos go. Only out/ is committed. */
 const DIR = path.resolve(process.env.REEL_DIR || path.join(ROOT, '.reel'))
 fs.mkdirSync(DIR, { recursive: true })
 
