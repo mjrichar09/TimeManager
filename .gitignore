@@ -48,3 +48,6 @@ design/tally-screens.html
 
 # repair backups: the previous state of any row a repair script rewrote
 /db/repairs/
+
+# demo reel takes and videos (scripts/reel)
+/.reel/
